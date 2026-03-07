@@ -6,7 +6,7 @@ from agent_engine.execution.infrastructure.repositories.sql_alchemy_session_repo
     SqlAlchemySessionRepository,
 )
 from dependency_injector.providers import Factory
-from agent_engine.execution.infrastructure.clients.claude_agent_gateway import (
+from agent_engine.execution.infrastructure.adapters.claude_agent_gateway import (
     ClaudeAgentGateway,
 )
 from agent_engine.execution.application.use_cases.execute_agent_session import (

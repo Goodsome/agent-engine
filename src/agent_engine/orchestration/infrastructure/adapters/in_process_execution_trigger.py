@@ -1,11 +1,11 @@
-from agent_engine.orchestration.domain.ports.execution_trigger_port import (
-    ExecutionTriggerPort,
-)
 from typing import Union
-from agent_engine.shared.domain.value_objects.task_id import TaskId
 from agent_engine.shared.domain.value_objects.job_id import JobId
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 from dataclasses import dataclass
+from agent_engine.shared.domain.value_objects.task_id import TaskId
+from agent_engine.orchestration.domain.ports.execution_trigger_port import (
+    ExecutionTriggerPort,
+)
 
 
 @dataclass

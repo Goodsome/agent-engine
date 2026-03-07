@@ -1,12 +1,13 @@
 from typing import Any, Callable, NamedTuple, TypedDict
 
-TEST_CASES_EXECUTE: list[ExecuteCase] = []
-
 
 class ExecuteCase(NamedTuple):
     mocks_setup: Callable
     job_id: JobId
     task_id: TaskId
-    requirement: str
+    requirement: string
     session_type: SessionType
     expected: Any
+
+
+TEST_CASES_EXECUTE: list[ExecuteCase] = []

@@ -1,7 +1,7 @@
 from agent_engine.orchestration.application.use_cases.run_event_loop_tick import (
     RunEventLoopTick,
 )
-from agent_engine.orchestration.infrastructure.clients.task_graph_adapter import (
+from agent_engine.orchestration.infrastructure.adapters.task_graph_adapter import (
     TaskGraphAdapter,
 )
 from agent_engine.orchestration.application.use_cases.start_initial_workflow import (
@@ -12,7 +12,7 @@ from agent_engine.orchestration.infrastructure.repositories.sql_alchemy_dispatch
 )
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Factory
-from agent_engine.orchestration.infrastructure.clients.in_process_execution_trigger import (
+from agent_engine.orchestration.infrastructure.adapters.in_process_execution_trigger import (
     InProcessExecutionTrigger,
 )
 

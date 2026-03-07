@@ -1,10 +1,6 @@
 from typing import Any, Callable, NamedTuple, TypedDict
 from agent_engine.orchestration.domain.aggregates.dispatch_job import DispatchJob
 
-TEST_CASES_MARK_RUNNING: list[MarkRunningCase] = []
-TEST_CASES_MARK_COMPLETED: list[MarkCompletedCase] = []
-TEST_CASES_MARK_FAILED: list[MarkFailedCase] = []
-
 
 class MarkRunningCase(NamedTuple):
     instance: DispatchJob
@@ -19,5 +15,10 @@ class MarkCompletedCase(NamedTuple):
 
 class MarkFailedCase(NamedTuple):
     instance: DispatchJob
-    reason: str
+    reason: string
     expected: Any
+
+
+TEST_CASES_MARK_RUNNING: list[MarkRunningCase] = []
+TEST_CASES_MARK_COMPLETED: list[MarkCompletedCase] = []
+TEST_CASES_MARK_FAILED: list[MarkFailedCase] = []
