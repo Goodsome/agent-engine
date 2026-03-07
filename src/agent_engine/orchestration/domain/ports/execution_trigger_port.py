@@ -9,7 +9,7 @@ class ExecutionTriggerPort(ABC):
     """定义一个明确的跨上下文调用端口，用于触发 Execution 域。"""
 
     @abstractmethod
-    def trigger_session(
+    async def trigger_session(
         self,
         job_id: JobId,
         task_id: TaskId | None = None,

@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, AsyncMock
 from .cases_in_process_execution_trigger import TEST_CASES_TRIGGER_SESSION
 
 
@@ -7,7 +7,7 @@ class TestInProcessExecutionTrigger:
 
     @pytest.fixture
     def execute_agent_session_mock(self):
-        return MagicMock()
+        return AsyncMock()
 
     @pytest.fixture
     def in_process_execution_trigger(self, execute_agent_session_mock) -> None:
@@ -21,7 +21,7 @@ class TestInProcessExecutionTrigger:
         "mocks_setup, job_id, task_id, requirement, expected",
         TEST_CASES_TRIGGER_SESSION,
     )
-    def test_trigger_session(
+    async def test_trigger_session(
         self,
         in_process_execution_trigger,
         mocks_setup,
@@ -39,7 +39,7 @@ class TestInProcessExecutionTrigger:
             is_success=True
         )
 
-        result = in_process_execution_trigger.trigger_session(
+        result = await in_process_execution_trigger.trigger_session(
             job_id=job_id, task_id=task_id, requirement=requirement
         )
         if callable(expected):

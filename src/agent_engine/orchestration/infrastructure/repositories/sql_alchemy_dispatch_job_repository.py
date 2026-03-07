@@ -13,12 +13,12 @@ class SqlAlchemyDispatchJobRepository(DispatchJobRepository):
     
     _storage: dict[str, DispatchJob] = field(default_factory=dict)
 
-    def save(self, job: DispatchJob) -> None:
+    async def save(self, job: DispatchJob) -> None:
         self._storage[str(job.id.value)] = job
 
-    def delete(self, dispatch_job_id: JobId) -> None:
+    async def delete(self, dispatch_job_id: JobId) -> None:
         if str(dispatch_job_id.value) in self._storage:
             del self._storage[str(dispatch_job_id.value)]
 
-    def find_by_id(self, dispatch_job_id: JobId) -> DispatchJob | None:
+    async def find_by_id(self, dispatch_job_id: JobId) -> DispatchJob | None:
         return self._storage.get(str(dispatch_job_id.value))

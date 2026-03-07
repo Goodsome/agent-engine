@@ -16,7 +16,7 @@ class TestClaudeAgentGateway:
     @pytest.mark.parametrize(
         "mocks_setup, system_prompt, user_prompt, tools, expected", TEST_CASES_RUN
     )
-    def test_run(
+    async def test_run(
         self,
         claude_agent_gateway,
         mocks_setup,
@@ -26,7 +26,7 @@ class TestClaudeAgentGateway:
         expected,
     ) -> None:
         mocks_setup()
-        result = claude_agent_gateway.run(
+        result = await claude_agent_gateway.run(
             system_prompt=system_prompt, user_prompt=user_prompt, tools=tools
         )
         if callable(expected):

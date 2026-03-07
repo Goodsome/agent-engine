@@ -7,15 +7,15 @@ class TestExecuteAgentSession:
 
     @pytest.fixture
     def agent_gateway(self) -> None:
-        return MagicMock()
+        return AsyncMock()
 
     @pytest.fixture
     def sop_repo(self) -> None:
-        return MagicMock()
+        return AsyncMock()
 
     @pytest.fixture
     def session_repo(self) -> None:
-        return MagicMock()
+        return AsyncMock()
 
     @pytest.fixture
     def use_case(self, agent_gateway, sop_repo, session_repo) -> None:
@@ -31,7 +31,7 @@ class TestExecuteAgentSession:
         "mocks_setup, job_id, task_id, requirement, session_type, expected",
         TEST_CASES_EXECUTE,
     )
-    def test_execute(
+    async def test_execute(
         self,
         use_case,
         agent_gateway,
@@ -52,7 +52,7 @@ class TestExecuteAgentSession:
             requirement=requirement,
             session_type=session_type,
         )
-        result = use_case.execute(cmd=cmd)
+        result = await use_case.execute(cmd=cmd)
         if callable(expected):
             assert expected(result)
         else:

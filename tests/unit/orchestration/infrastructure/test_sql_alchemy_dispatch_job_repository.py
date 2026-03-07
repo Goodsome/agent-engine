@@ -18,11 +18,11 @@ class TestSqlAlchemyDispatchJobRepository:
         return SqlAlchemyDispatchJobRepository()
 
     @pytest.mark.parametrize("mocks_setup, job, expected", TEST_CASES_SAVE)
-    def test_save(
+    async def test_save(
         self, sql_alchemy_dispatch_job_repository, mocks_setup, job, expected
     ) -> None:
         mocks_setup()
-        result = sql_alchemy_dispatch_job_repository.save(job=job)
+        result = await sql_alchemy_dispatch_job_repository.save(job=job)
         if callable(expected):
             expected(sql_alchemy_dispatch_job_repository)
         else:
@@ -31,7 +31,7 @@ class TestSqlAlchemyDispatchJobRepository:
     @pytest.mark.parametrize(
         "mocks_setup, dispatch_job_id, expected", TEST_CASES_DELETE
     )
-    def test_delete(
+    async def test_delete(
         self,
         sql_alchemy_dispatch_job_repository,
         mocks_setup,
@@ -39,7 +39,7 @@ class TestSqlAlchemyDispatchJobRepository:
         expected,
     ) -> None:
         mocks_setup()
-        result = sql_alchemy_dispatch_job_repository.delete(
+        result = await sql_alchemy_dispatch_job_repository.delete(
             dispatch_job_id=dispatch_job_id
         )
         if callable(expected):
@@ -50,7 +50,7 @@ class TestSqlAlchemyDispatchJobRepository:
     @pytest.mark.parametrize(
         "mocks_setup, dispatch_job_id, expected", TEST_CASES_FIND_BY_ID
     )
-    def test_find_by_id(
+    async def test_find_by_id(
         self,
         sql_alchemy_dispatch_job_repository,
         mocks_setup,
@@ -58,7 +58,7 @@ class TestSqlAlchemyDispatchJobRepository:
         expected,
     ) -> None:
         mocks_setup()
-        result = sql_alchemy_dispatch_job_repository.find_by_id(
+        result = await sql_alchemy_dispatch_job_repository.find_by_id(
             dispatch_job_id=dispatch_job_id
         )
         if callable(expected):

@@ -14,9 +14,9 @@ class TestTaskGraphAdapter:
         return TaskGraphAdapter()
 
     @pytest.mark.parametrize("mocks_setup, expected", TEST_CASES_FETCH_READY_TASKS)
-    def test_fetch_ready_tasks(self, task_graph_adapter, mocks_setup, expected) -> None:
+    async def test_fetch_ready_tasks(self, task_graph_adapter, mocks_setup, expected) -> None:
         mocks_setup()
-        result = task_graph_adapter.fetch_ready_tasks()
+        result = await task_graph_adapter.fetch_ready_tasks()
         if callable(expected):
             expected(task_graph_adapter)
         else:

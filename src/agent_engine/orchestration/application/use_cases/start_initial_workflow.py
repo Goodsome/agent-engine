@@ -28,21 +28,21 @@ class StartInitialWorkflow:
     job_repo: DispatchJobRepository
     execution_trigger: ExecutionTriggerPort
 
-    def execute(
+    async def execute(
         self, cmd: StartInitialWorkflowCommand
     ) -> StartInitialWorkflowResult:
         job = DispatchJob(
             id=JobId(value=uuid.uuid4()),
             status=JobStatus.PENDING
         )
-        self.job_repo.save(job=job)
+        await self.job_repo.save(job=job)
 
-        session_id = self.execution_trigger.trigger_session(
+        session_id = await self.execution_trigger.trigger_session(
             job_id=job.id,
             requirement=cmd.raw_requirement
         )
 
         job.mark_running(session_id=session_id)
-        self.job_repo.save(job=job)
+        await self.job_repo.save(job=job)
 
         return StartInitialWorkflowResult(initial_session_id=str(session_id.value))

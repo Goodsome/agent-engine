@@ -13,12 +13,12 @@ class SqlAlchemySessionRepository(AgentSessionRepository):
     
     _storage: dict[str, AgentSession] = field(default_factory=dict)
 
-    def save(self, session: AgentSession) -> None:
+    async def save(self, session: AgentSession) -> None:
         self._storage[str(session.id.value)] = session
 
-    def delete(self, agent_session_id: SessionId) -> None:
+    async def delete(self, agent_session_id: SessionId) -> None:
         if str(agent_session_id.value) in self._storage:
             del self._storage[str(agent_session_id.value)]
 
-    def find_by_id(self, agent_session_id: SessionId) -> AgentSession | None:
+    async def find_by_id(self, agent_session_id: SessionId) -> AgentSession | None:
         return self._storage.get(str(agent_session_id.value))

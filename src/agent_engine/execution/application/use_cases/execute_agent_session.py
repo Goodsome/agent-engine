@@ -37,7 +37,7 @@ class ExecuteAgentSession:
     sop_repo: SopRepository
     session_repo: AgentSessionRepository
 
-    def execute(self, cmd: ExecuteAgentSessionCommand) -> ExecuteAgentSessionResult:
+    async def execute(self, cmd: ExecuteAgentSessionCommand) -> ExecuteAgentSessionResult:
         session = AgentSession(
             id=SessionId(value=uuid.uuid4()),
             job_id=cmd.job_id,
@@ -46,15 +46,15 @@ class ExecuteAgentSession:
             context_payload={"requirement": cmd.requirement} if cmd.requirement else {},
             status=SessionStatus.IDLE
         )
-        self.session_repo.save(session=session)
+        await self.session_repo.save(session=session)
 
         session.start()
-        self.session_repo.save(session=session)
+        await self.session_repo.save(session=session)
 
-        sop = self.sop_repo.get_sop(session_type=cmd.session_type)
+        sop = await self.sop_repo.get_sop(session_type=cmd.session_type)
 
         try:
-            output = self.agent_gateway.run(
+            output = await self.agent_gateway.run(
                 system_prompt=sop,
                 user_prompt=cmd.requirement or "Please execute your task.",
                 tools=[]
@@ -66,7 +66,7 @@ class ExecuteAgentSession:
             session.finish_with_error(error=output)
             is_success = False
 
-        self.session_repo.save(session=session)
+        await self.session_repo.save(session=session)
 
         return ExecuteAgentSessionResult(
             session_id=session.id,

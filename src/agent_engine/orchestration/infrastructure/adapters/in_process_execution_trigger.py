@@ -15,7 +15,7 @@ class InProcessExecutionTrigger(ExecutionTriggerPort):
     
     execute_agent_session: ExecuteAgentSession
 
-    def trigger_session(
+    async def trigger_session(
         self,
         job_id: JobId,
         task_id: TaskId | None = None,
@@ -27,5 +27,5 @@ class InProcessExecutionTrigger(ExecutionTriggerPort):
             requirement=requirement,
             session_type=SessionType.PLANNER # Assuming planner type as default entry
         )
-        result = self.execute_agent_session.execute(cmd)
+        result = await self.execute_agent_session.execute(cmd)
         return result.session_id

@@ -18,11 +18,11 @@ class TestSqlAlchemySessionRepository:
         return SqlAlchemySessionRepository()
 
     @pytest.mark.parametrize("mocks_setup, session, expected", TEST_CASES_SAVE)
-    def test_save(
+    async def test_save(
         self, sql_alchemy_session_repository, mocks_setup, session, expected
     ) -> None:
         mocks_setup()
-        result = sql_alchemy_session_repository.save(session=session)
+        result = await sql_alchemy_session_repository.save(session=session)
         if callable(expected):
             expected(sql_alchemy_session_repository)
         else:
@@ -31,11 +31,11 @@ class TestSqlAlchemySessionRepository:
     @pytest.mark.parametrize(
         "mocks_setup, agent_session_id, expected", TEST_CASES_DELETE
     )
-    def test_delete(
+    async def test_delete(
         self, sql_alchemy_session_repository, mocks_setup, agent_session_id, expected
     ) -> None:
         mocks_setup()
-        result = sql_alchemy_session_repository.delete(
+        result = await sql_alchemy_session_repository.delete(
             agent_session_id=agent_session_id
         )
         if callable(expected):
@@ -46,11 +46,11 @@ class TestSqlAlchemySessionRepository:
     @pytest.mark.parametrize(
         "mocks_setup, agent_session_id, expected", TEST_CASES_FIND_BY_ID
     )
-    def test_find_by_id(
+    async def test_find_by_id(
         self, sql_alchemy_session_repository, mocks_setup, agent_session_id, expected
     ) -> None:
         mocks_setup()
-        result = sql_alchemy_session_repository.find_by_id(
+        result = await sql_alchemy_session_repository.find_by_id(
             agent_session_id=agent_session_id
         )
         if callable(expected):

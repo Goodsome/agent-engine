@@ -7,11 +7,11 @@ class TestStartInitialWorkflow:
 
     @pytest.fixture
     def job_repo(self) -> None:
-        return MagicMock()
+        return AsyncMock()
 
     @pytest.fixture
     def execution_trigger(self) -> None:
-        return MagicMock()
+        return AsyncMock()
 
     @pytest.fixture
     def use_case(self, job_repo, execution_trigger) -> None:
@@ -26,7 +26,7 @@ class TestStartInitialWorkflow:
     @pytest.mark.parametrize(
         "mocks_setup, raw_requirement, expected", TEST_CASES_EXECUTE
     )
-    def test_execute(
+    async def test_execute(
         self,
         use_case,
         job_repo,
@@ -37,5 +37,5 @@ class TestStartInitialWorkflow:
     ) -> None:
         from agent_engine.orchestration.application.use_cases.start_initial_workflow import StartInitialWorkflowCommand
         mocks_setup(job_repo, execution_trigger)
-        result = use_case.execute(cmd=StartInitialWorkflowCommand(raw_requirement=raw_requirement))
+        result = await use_case.execute(cmd=StartInitialWorkflowCommand(raw_requirement=raw_requirement))
         assert result == expected

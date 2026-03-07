@@ -10,7 +10,7 @@ class LocalFileSopRepository(SopRepository):
     
     base_dir: str = "sops"
 
-    def get_sop(self, session_type: SessionType) -> str:
+    async def get_sop(self, session_type: SessionType) -> str:
         # In a real environment, we'd read from `self.base_dir / session_type.value + '.md'`
         # For our test to pass and since we don't have real markdown files right now, we return a mock string.
         # It's better to implement reading with fallback:

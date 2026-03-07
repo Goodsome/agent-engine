@@ -1,5 +1,5 @@
 from typing import Any, Callable, NamedTuple, TypedDict
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, AsyncMock
 
 class RunCase(NamedTuple):
     mocks_setup: Callable
@@ -9,12 +9,13 @@ class RunCase(NamedTuple):
     expected: Any
 
 def _setup_mocks_success():
-    patcher = patch('subprocess.run')
+    patcher = patch('asyncio.create_subprocess_exec', new_callable=AsyncMock)
     mock_run_func = patcher.start()
     
-    mock_result = MagicMock()
-    mock_result.stdout = "Mocked Gemini Response\n"
-    mock_run_func.return_value = mock_result
+    mock_process = AsyncMock()
+    mock_process.communicate.return_value = (b"Mocked Gemini Response\n", b"")
+    mock_process.returncode = 0
+    mock_run_func.return_value = mock_process
 
 TEST_CASES_RUN: list[RunCase] = [
     RunCase(

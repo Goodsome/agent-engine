@@ -31,8 +31,8 @@ class RunEventLoopTick:
     job_repo: DispatchJobRepository
     execution_trigger: ExecutionTriggerPort
 
-    def execute(self, cmd: RunEventLoopTickCommand) -> RunEventLoopTickResult:
-        tasks = self.task_query_port.fetch_ready_tasks()
+    async def execute(self, cmd: RunEventLoopTickCommand) -> RunEventLoopTickResult:
+        tasks = await self.task_query_port.fetch_ready_tasks()
         dispatched_count = 0
 
         for task in tasks:
@@ -41,16 +41,16 @@ class RunEventLoopTick:
                 task_id=task.task_id,
                 status=JobStatus.PENDING
             )
-            self.job_repo.save(job=job)
+            await self.job_repo.save(job=job)
 
-            session_id = self.execution_trigger.trigger_session(
+            session_id = await self.execution_trigger.trigger_session(
                 job_id=job.id,
                 task_id=task.task_id,
                 requirement=task.intent or task.name
             )
 
             job.mark_running(session_id=session_id)
-            self.job_repo.save(job=job)
+            await self.job_repo.save(job=job)
             dispatched_count += 1
 
         return RunEventLoopTickResult(dispatched_count=dispatched_count)
