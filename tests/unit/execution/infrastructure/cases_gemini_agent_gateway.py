@@ -1,4 +1,5 @@
 from typing import Any, Callable, NamedTuple, TypedDict
+from unittest.mock import patch, MagicMock
 
 class RunCase(NamedTuple):
     mocks_setup: Callable
@@ -8,7 +9,12 @@ class RunCase(NamedTuple):
     expected: Any
 
 def _setup_mocks_success():
-    pass
+    patcher = patch('subprocess.run')
+    mock_run_func = patcher.start()
+    
+    mock_result = MagicMock()
+    mock_result.stdout = "Mocked Gemini Response\n"
+    mock_run_func.return_value = mock_result
 
 TEST_CASES_RUN: list[RunCase] = [
     RunCase(
