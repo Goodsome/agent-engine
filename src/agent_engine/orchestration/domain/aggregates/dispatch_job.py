@@ -15,8 +15,12 @@ class DispatchJob(Aggregate):
     status: JobStatus
     session_id: SessionId | None = Field(default=None)
 
-    def mark_running(self, session_id: SessionId) -> None: ...
+    def mark_running(self, session_id: SessionId) -> None:
+        self.status = JobStatus.RUNNING
+        self.session_id = session_id
 
-    def mark_completed(self) -> None: ...
+    def mark_completed(self) -> None:
+        self.status = JobStatus.COMPLETED
 
-    def mark_failed(self, reason: str) -> None: ...
+    def mark_failed(self, reason: str) -> None:
+        self.status = JobStatus.FAILED

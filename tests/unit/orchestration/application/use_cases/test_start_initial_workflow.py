@@ -35,6 +35,7 @@ class TestStartInitialWorkflow:
         raw_requirement,
         expected,
     ) -> None:
+        from agent_engine.orchestration.application.use_cases.start_initial_workflow import StartInitialWorkflowCommand
         mocks_setup(job_repo, execution_trigger)
-        result = use_case.execute(raw_requirement=raw_requirement)
+        result = use_case.execute(cmd=StartInitialWorkflowCommand(raw_requirement=raw_requirement))
         assert result == expected

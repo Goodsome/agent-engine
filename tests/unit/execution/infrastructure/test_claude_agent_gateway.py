@@ -7,7 +7,7 @@ class TestClaudeAgentGateway:
 
     @pytest.fixture
     def claude_agent_gateway(self) -> None:
-        from agent_engine.execution.infrastructure.claude_agent_gateway import (
+        from agent_engine.execution.infrastructure.adapters.claude_agent_gateway import (
             ClaudeAgentGateway,
         )
 

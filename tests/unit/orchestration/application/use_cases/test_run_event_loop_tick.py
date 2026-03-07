@@ -39,6 +39,7 @@ class TestRunEventLoopTick:
         mocks_setup,
         expected,
     ) -> None:
+        from agent_engine.orchestration.application.use_cases.run_event_loop_tick import RunEventLoopTickCommand
         mocks_setup(task_query_port, job_repo, execution_trigger)
-        result = use_case.execute()
+        result = use_case.execute(cmd=RunEventLoopTickCommand())
         assert result == expected

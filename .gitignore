@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDEs
+.idea/
+*.swp
+*.swo
+*~
+
+# uv
+uv.lock
+
+# OS
+.DS_Store
+Thumbs.db
+/backup/
+/target/
+/src/codegen.egg-info/
+/build/
+/dist/
+/project_context.txt

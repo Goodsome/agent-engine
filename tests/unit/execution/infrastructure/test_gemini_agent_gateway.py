@@ -7,7 +7,7 @@ class TestGeminiAgentGateway:
 
     @pytest.fixture
     def gemini_agent_gateway(self) -> None:
-        from agent_engine.execution.infrastructure.gemini_agent_gateway import (
+        from agent_engine.execution.infrastructure.adapters.gemini_agent_gateway import (
             GeminiAgentGateway,
         )
 

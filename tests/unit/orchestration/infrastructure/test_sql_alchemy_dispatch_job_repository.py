@@ -11,7 +11,7 @@ class TestSqlAlchemyDispatchJobRepository:
 
     @pytest.fixture
     def sql_alchemy_dispatch_job_repository(self) -> None:
-        from agent_engine.orchestration.infrastructure.sql_alchemy_dispatch_job_repository import (
+        from agent_engine.orchestration.infrastructure.repositories.sql_alchemy_dispatch_job_repository import (
             SqlAlchemyDispatchJobRepository,
         )
 

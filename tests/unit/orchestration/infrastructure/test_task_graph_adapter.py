@@ -7,7 +7,7 @@ class TestTaskGraphAdapter:
 
     @pytest.fixture
     def task_graph_adapter(self) -> None:
-        from agent_engine.orchestration.infrastructure.task_graph_adapter import (
+        from agent_engine.orchestration.infrastructure.adapters.task_graph_adapter import (
             TaskGraphAdapter,
         )
 

@@ -25,6 +25,10 @@ class ExecuteAgentSessionResult(BaseModel):
     output: str | None = Field(default=None)
 
 
+import uuid
+from agent_engine.execution.domain.aggregates.agent_session import AgentSession
+from agent_engine.execution.domain.enums import SessionStatus
+
 @dataclass
 class ExecuteAgentSession:
     """核心用例：组装 SOP 与上下文，调用 AgentGateway 执行。这是 Orchestration 域中 ExecutionTriggerPort 的物理接收端。"""
@@ -33,4 +37,39 @@ class ExecuteAgentSession:
     sop_repo: SopRepository
     session_repo: AgentSessionRepository
 
-    def execute(self, cmd: ExecuteAgentSessionCommand) -> ExecuteAgentSessionResult: ...
+    def execute(self, cmd: ExecuteAgentSessionCommand) -> ExecuteAgentSessionResult:
+        session = AgentSession(
+            id=SessionId(value=uuid.uuid4()),
+            job_id=cmd.job_id,
+            task_id=cmd.task_id,
+            session_type=cmd.session_type,
+            context_payload={"requirement": cmd.requirement} if cmd.requirement else {},
+            status=SessionStatus.IDLE
+        )
+        self.session_repo.save(session=session)
+
+        session.start()
+        self.session_repo.save(session=session)
+
+        sop = self.sop_repo.get_sop(session_type=cmd.session_type)
+
+        try:
+            output = self.agent_gateway.run(
+                system_prompt=sop,
+                user_prompt=cmd.requirement or "Please execute your task.",
+                tools=[]
+            )
+            session.finish_with_success(output=output)
+            is_success = True
+        except Exception as e:
+            output = str(e)
+            session.finish_with_error(error=output)
+            is_success = False
+
+        self.session_repo.save(session=session)
+
+        return ExecuteAgentSessionResult(
+            session_id=session.id,
+            is_success=is_success,
+            output=session.final_output if is_success else session.error_message
+        )

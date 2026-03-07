@@ -19,8 +19,13 @@ class AgentSession(Aggregate):
     final_output: str | None = Field(default=None)
     error_message: str | None = Field(default=None)
 
-    def start(self) -> None: ...
+    def start(self) -> None:
+        self.status = SessionStatus.RUNNING
 
-    def finish_with_success(self, output: str) -> None: ...
+    def finish_with_success(self, output: str) -> None:
+        self.status = SessionStatus.SUCCESS
+        self.final_output = output
 
-    def finish_with_error(self, error: str) -> None: ...
+    def finish_with_error(self, error: str) -> None:
+        self.status = SessionStatus.ERROR
+        self.error_message = error

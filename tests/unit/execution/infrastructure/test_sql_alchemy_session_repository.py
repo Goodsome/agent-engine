@@ -11,7 +11,7 @@ class TestSqlAlchemySessionRepository:
 
     @pytest.fixture
     def sql_alchemy_session_repository(self) -> None:
-        from agent_engine.execution.infrastructure.sql_alchemy_session_repository import (
+        from agent_engine.execution.infrastructure.repositories.sql_alchemy_session_repository import (
             SqlAlchemySessionRepository,
         )
 

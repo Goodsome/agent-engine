@@ -12,7 +12,7 @@ class TestLocalFileSopRepository:
 
     @pytest.fixture
     def local_file_sop_repository(self) -> None:
-        from agent_engine.execution.infrastructure.local_file_sop_repository import (
+        from agent_engine.execution.infrastructure.repositories.local_file_sop_repository import (
             LocalFileSopRepository,
         )
 

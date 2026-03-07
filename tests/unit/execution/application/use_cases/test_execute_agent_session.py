@@ -44,11 +44,16 @@ class TestExecuteAgentSession:
         session_type,
         expected,
     ) -> None:
+        from agent_engine.execution.application.use_cases.execute_agent_session import ExecuteAgentSessionCommand
         mocks_setup(agent_gateway, sop_repo, session_repo)
-        result = use_case.execute(
+        cmd = ExecuteAgentSessionCommand(
             job_id=job_id,
             task_id=task_id,
             requirement=requirement,
             session_type=session_type,
         )
-        assert result == expected
+        result = use_case.execute(cmd=cmd)
+        if callable(expected):
+            assert expected(result)
+        else:
+            assert result == expected

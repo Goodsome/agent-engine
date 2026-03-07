@@ -6,12 +6,16 @@ from .cases_in_process_execution_trigger import TEST_CASES_TRIGGER_SESSION
 class TestInProcessExecutionTrigger:
 
     @pytest.fixture
-    def in_process_execution_trigger(self) -> None:
-        from agent_engine.orchestration.infrastructure.in_process_execution_trigger import (
+    def execute_agent_session_mock(self):
+        return MagicMock()
+
+    @pytest.fixture
+    def in_process_execution_trigger(self, execute_agent_session_mock) -> None:
+        from agent_engine.orchestration.infrastructure.adapters.in_process_execution_trigger import (
             InProcessExecutionTrigger,
         )
 
-        return InProcessExecutionTrigger()
+        return InProcessExecutionTrigger(execute_agent_session=execute_agent_session_mock)
 
     @pytest.mark.parametrize(
         "mocks_setup, job_id, task_id, requirement, expected",
@@ -26,11 +30,19 @@ class TestInProcessExecutionTrigger:
         requirement,
         expected,
     ) -> None:
-        mocks_setup()
+        from agent_engine.shared.domain.value_objects.session_id import SessionId
+        import uuid
+        from agent_engine.execution.application.use_cases.execute_agent_session import ExecuteAgentSessionResult
+        
+        in_process_execution_trigger.execute_agent_session.execute.return_value = ExecuteAgentSessionResult(
+            session_id=SessionId(value=uuid.UUID("33333333-3333-3333-3333-333333333333")),
+            is_success=True
+        )
+
         result = in_process_execution_trigger.trigger_session(
             job_id=job_id, task_id=task_id, requirement=requirement
         )
         if callable(expected):
-            expected(in_process_execution_trigger)
+            assert expected(result)
         else:
             assert result == expected
