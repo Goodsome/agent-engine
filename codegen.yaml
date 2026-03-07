@@ -1,0 +1,338 @@
+# yaml-language-server: $schema=./codegen.schema.json
+name: AgentEngine
+description: 极简事件驱动的 Agent 调度与执行引擎 (Beads/Workers)
+contexts:
+- name: Shared
+  description: Common generic components.
+  domain:
+    value_objects:
+    - name: TaskId
+      description: 关联到远端 TaskGraph 的任务标识
+      attributes:
+      - name: value
+        type: uuid
+    - name: SessionId
+      description: Agent 执行会话的唯一标识
+      attributes:
+      - name: value
+        type: uuid
+    - name: JobId
+      description: 调度派发任务的唯一标识
+      attributes:
+      - name: value
+        type: uuid
+- name: Orchestration
+  description: 编排上下文 — 系统的“心脏”，负责轮询 TaskGraph 状态并分发任务，以及处理用户的初始启动指令。
+  domain:
+    aggregates:
+    - name: DispatchJob
+      description: 聚合根 — 记录一次从 TaskGraph 拉取任务并尝试执行的分发记录。
+      attributes:
+      - name: id
+        type: JobId
+        description: 分发记录的唯一标识
+      - name: task_id
+        type: TaskId
+        description: 关联的 TaskGraph 中的 Task ID
+        optional: true
+      - name: status
+        type: JobStatus
+        description: 当前分发状态
+      - name: session_id
+        type: SessionId
+        optional: true
+        description: 关联的 Agent 执行会话 ID
+      behaviors:
+      - name: mark_running
+        inputs:
+        - name: session_id
+          type: SessionId
+        output:
+          type: None
+      - name: mark_completed
+        output:
+          type: None
+      - name: mark_failed
+        inputs:
+        - name: reason
+          type: str
+        output:
+          type: None
+    
+    value_objects:
+    - name: ReadyTaskDTO
+      description: 防腐层数据契约：从 TaskGraph 读取的、随时可被派发的任务快照
+      attributes:
+      - name: task_id
+        type: TaskId
+        description: 任务的全局唯一标识
+      - name: planning_level
+        type: str
+        description: 任务层级 (如 architectural, feature, atomic)，用于决定挂载什么 SOP
+      - name: name
+        type: str
+        description: 任务简述，用于日志打印和追踪
+      - name: intent
+        type: str
+        optional: true
+        description: 操作意图 (如 develop, design)，辅助决定 Agent 的行为模式
+    enums:
+    - name: JobStatus
+      members:
+      - name: PENDING
+        value: pending
+      - name: RUNNING
+        value: running
+      - name: COMPLETED
+        value: completed
+      - name: FAILED
+        value: failed
+    ports:
+    - name: TaskGraphQueryPort
+      kind: client
+      description: 防腐层：读取 TaskGraph 状态的只读接口，未来可替换为事件订阅(Pub/Sub)客户端。
+      operations:
+      - name: fetch_ready_tasks
+        inputs: []
+        output:
+          type: ReadyTaskDTO
+          container: list
+    - name: DispatchJobRepository
+      kind: repository
+      aggregate: DispatchJob
+      operations:
+      - name: save
+        inputs:
+        - name: job
+          type: DispatchJob
+        output:
+          type: None
+    - name: ExecutionTriggerPort 
+      kind: client
+      description: 定义一个明确的跨上下文调用端口，用于触发 Execution 域。
+      operations:
+      - name: trigger_session
+        inputs:
+        - name: job_id
+          type: JobId
+        - name: task_id
+          type: TaskId
+          optional: true
+        - name: requirement
+          type: str
+          optional: true
+          description: 用于初始点火时的自然语言需求
+        output:
+          type: SessionId # 期望 Execution 域返回生成的 SessionId
+  application:
+    use_cases:
+    - name: StartInitialWorkflow
+      kind: command
+      description: CLI 入口：接收用户自然语言指令，直接拉起一个 Planner Session，让 Agent 负责向 TaskGraph 写入初始节点。
+      dependencies:
+      - name: job_repo
+        type: DispatchJobRepository
+      - name: execution_trigger
+        type: ExecutionTriggerPort
+      command:
+        name: StartInitialWorkflowCommand
+        attributes:
+        - name: raw_requirement
+          type: str
+          description: 用户的原始指令，如 "修复鉴权 Bug"
+      result:
+        name: StartInitialWorkflowResult
+        attributes:
+        - name: initial_session_id
+          type: str
+          description: 启动的 Planner Session ID
+    - name: RunEventLoopTick
+      kind: command
+      description: 核心调度循环的一帧 (Tick)：查询 READY 任务 -> 创建 DispatchJob -> 触发 Execution。
+      dependencies:
+      - name: task_query_port
+        type: TaskGraphQueryPort
+      - name: job_repo
+        type: DispatchJobRepository
+      - name: execution_trigger
+        type: ExecutionTriggerPort
+      command:
+        name: RunEventLoopTickCommand
+        attributes: []
+      result:
+        name: RunEventLoopTickResult
+        attributes:
+        - name: dispatched_count
+          type: int
+          description: 本次循环成功派发的任务数量
+          
+  infrastructure:
+    implementations:
+    - name: TaskGraphAdapter
+      implements: TaskGraphQueryPort
+      technology: sub_process
+      description: 通过 TaskGraph 服务获取 Ready 任务
+    - name: SqlAlchemyDispatchJobRepository
+      implements: DispatchJobRepository
+      technology: sqlalchemy
+      description: 使用 PostgreSQL/SQLite 持久化 Job 记录
+    - name: InProcessExecutionTrigger
+      implements: ExecutionTriggerPort
+      technology: in_process
+      description: 进程内直接调用 Execution 域的应用层服务 (UseCase) 触发任务
+
+- name: Execution
+  description: 执行上下文 — 纯粹的计算节点 (Beads)，封装 Agent SDK，负责具体的推理和工具调用。
+  domain:
+    aggregates:
+    - name: AgentSession
+      description: 聚合根 — 一次完整的 Agent 运行生命周期，包括 Prompt 组装、工具挂载和最终输出。
+      attributes:
+      - name: id
+        type: SessionId
+      - name: job_id
+        type: JobId
+        description: 关联的调度派发任务 ID，用于向上追溯
+      - name: task_id
+        type: TaskId
+        optional: true
+        description: 关联的 TaskGraph 任务 ID（如果是初始点火，则此项为空）
+      - name: session_type
+        type: SessionType
+        description: 决定加载什么 SOP 和工具集
+      - name: context_payload
+        type: dict
+        description: 注入给 Agent 的上下文 (如 Task 详情或初始 Requirement)
+      - name: status
+        type: SessionStatus
+      - name: final_output
+        type: str
+        optional: true
+      - name: error_message
+        type: str
+        optional: true
+      behaviors:
+      - name: start
+        output:
+          type: None
+      - name: finish_with_success
+        inputs:
+        - name: output
+          type: str
+        output:
+          type: None
+      - name: finish_with_error
+        inputs:
+        - name: error
+          type: str
+        output:
+          type: None
+    enums:
+    - name: SessionType
+      description: 执行会话类型
+      members:
+      - name: PLANNER
+        value: planner
+        description: 负责拆解需求、审查代码、管理 TaskGraph (拥有规划类工具权限)
+      - name: EXECUTOR
+        value: executor
+        description: 负责写代码、跑测试、更新骨架 (拥有代码生成和文件读写权限)
+    - name: SessionStatus
+      members:
+      - name: IDLE
+        value: idle
+      - name: RUNNING
+        value: running
+      - name: SUCCESS
+        value: success
+      - name: ERROR
+        value: error
+    ports:
+    - name: AgentGateway
+      kind: client
+      description: Agent 底层调用网关 (封装 claude-agent-sdk)
+      operations:
+      - name: run
+        inputs:
+        - name: system_prompt
+          type: str
+        - name: user_prompt
+          type: str
+        - name: tools
+          type: str
+          container: list
+        output:
+          type: str # LLM 的最终输出
+    - name: SopRepository
+      kind: repository
+      description: SOP 仓储，根据 SessionType 加载不同的操作规程
+      operations:
+      - name: get_sop
+        inputs:
+        - name: session_type
+          type: SessionType
+        output:
+          type: str
+    - name: AgentSessionRepository
+      kind: repository
+      aggregate: AgentSession
+      operations:
+      - name: save
+        inputs:
+        - name: session
+          type: AgentSession
+        output:
+          type: None
+  application:
+    use_cases:
+    - name: ExecuteAgentSession
+      kind: command
+      description: 核心用例：组装 SOP 与上下文，调用 AgentGateway 执行。这是 Orchestration 域中 ExecutionTriggerPort 的物理接收端。
+      dependencies:
+      - name: agent_gateway
+        type: AgentGateway
+      - name: sop_repo
+        type: SopRepository
+      - name: session_repo
+        type: AgentSessionRepository
+      command:
+        name: ExecuteSessionCommand
+        attributes:
+        - name: job_id
+          type: JobId
+        - name: task_id
+          type: TaskId
+          optional: true
+        - name: requirement
+          type: str
+          optional: true
+        - name: session_type
+          type: SessionType
+      result:
+        name: ExecuteSessionResult
+        attributes:
+        - name: session_id
+          type: SessionId
+        - name: is_success
+          type: bool
+        - name: output
+          type: str
+          optional: true
+  infrastructure:
+    implementations:
+    - name: ClaudeAgentGateway
+      implements: AgentGateway
+      technology: claude_agent_sdk
+      description: 封装对 Claude Agent SDK 的调用，将工具和 Prompt 注入并执行
+    - name: GeminiAgentGateway
+      implements: AgentGateway
+      technology: sub_process
+      description: 封装对 Gemini Cli 的调用，将工具和 Prompt 注入并执行
+    - name: LocalFileSopRepository
+      implements: SopRepository
+      technology: file_system
+      description: 从本地文件系统（如 docs/ 或 sops/ 目录）读取 Markdown 格式的 SOP 提示词
+    - name: SqlAlchemySessionRepository
+      implements: AgentSessionRepository
+      technology: sqlalchemy
+      description: 使用 PostgreSQL/SQLite 持久化 Agent 会话日志和状态
