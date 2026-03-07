@@ -15,20 +15,26 @@ from dependency_injector.providers import Factory
 from agent_engine.orchestration.infrastructure.adapters.in_process_execution_trigger import (
     InProcessExecutionTrigger,
 )
+from agent_engine.orchestration.infrastructure.adapters.local_file_sop_repository import (
+    LocalFileSopRepository,
+)
 
 
 class Container(DeclarativeContainer):
     task_graph_adapter = Factory(TaskGraphAdapter)
     sql_alchemy_dispatch_job_repository = Factory(SqlAlchemyDispatchJobRepository)
     in_process_execution_trigger = Factory(InProcessExecutionTrigger)
+    local_file_sop_repository = Factory(LocalFileSopRepository)
     start_initial_workflow = Factory(
         StartInitialWorkflow,
         job_repo=sql_alchemy_dispatch_job_repository,
         execution_trigger=in_process_execution_trigger,
+        sop_repo=local_file_sop_repository,
     )
     run_event_loop_tick = Factory(
         RunEventLoopTick,
         task_query_port=task_graph_adapter,
         job_repo=sql_alchemy_dispatch_job_repository,
         execution_trigger=in_process_execution_trigger,
+        sop_repo=local_file_sop_repository,
     )

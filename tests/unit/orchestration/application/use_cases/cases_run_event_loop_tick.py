@@ -9,12 +9,13 @@ class ExecuteCase(NamedTuple):
     mocks_setup: Callable
     expected: Any
 
-def _setup_mocks_success(task_query_port, job_repo, execution_trigger):
+def _setup_mocks_success(task_query_port, job_repo, execution_trigger, sop_repo):
     task_query_port.fetch_ready_tasks.return_value = [
-        ReadyTaskDTO(task_id=TaskId(value=uuid.uuid4()), planning_level="High", name="Task 1"),
-        ReadyTaskDTO(task_id=TaskId(value=uuid.uuid4()), planning_level="Medium", name="Task 2"),
+        ReadyTaskDTO(task_id=TaskId(value=uuid.uuid4()), planning_level="architecture", status="design", name="Task 1"),
+        ReadyTaskDTO(task_id=TaskId(value=uuid.uuid4()), planning_level="implementation", status="develop", name="Task 2"),
     ]
     execution_trigger.trigger_session.return_value = SessionId(value=uuid.uuid4())
+    sop_repo.get_sop.return_value = "You are a helpful agent"
 
 TEST_CASES_EXECUTE: list[ExecuteCase] = [
     ExecuteCase(

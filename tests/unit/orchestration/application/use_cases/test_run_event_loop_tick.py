@@ -18,7 +18,11 @@ class TestRunEventLoopTick:
         return AsyncMock()
 
     @pytest.fixture
-    def use_case(self, task_query_port, job_repo, execution_trigger) -> None:
+    def sop_repo(self) -> None:
+        return AsyncMock()
+
+    @pytest.fixture
+    def use_case(self, task_query_port, job_repo, execution_trigger, sop_repo) -> None:
         from agent_engine.orchestration.application.use_cases.run_event_loop_tick import (
             RunEventLoopTick,
         )
@@ -27,6 +31,7 @@ class TestRunEventLoopTick:
             task_query_port=task_query_port,
             job_repo=job_repo,
             execution_trigger=execution_trigger,
+            sop_repo=sop_repo,
         )
 
     @pytest.mark.parametrize("mocks_setup, expected", TEST_CASES_EXECUTE)
@@ -36,10 +41,11 @@ class TestRunEventLoopTick:
         task_query_port,
         job_repo,
         execution_trigger,
+        sop_repo,
         mocks_setup,
         expected,
     ) -> None:
         from agent_engine.orchestration.application.use_cases.run_event_loop_tick import RunEventLoopTickCommand
-        mocks_setup(task_query_port, job_repo, execution_trigger)
+        mocks_setup(task_query_port, job_repo, execution_trigger, sop_repo)
         result = await use_case.execute(cmd=RunEventLoopTickCommand())
         assert result == expected

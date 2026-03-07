@@ -1,7 +1,5 @@
 from agent_engine.shared.domain.value_objects.task_id import TaskId
 from agent_engine.shared.models import ValueObject
-from typing import Union
-from pydantic import Field
 
 
 class ReadyTaskDTO(ValueObject):
@@ -9,5 +7,5 @@ class ReadyTaskDTO(ValueObject):
 
     task_id: TaskId
     planning_level: str
+    status: str
     name: str
-    intent: str | None = Field(default=None)

@@ -1,8 +1,6 @@
-from agent_engine.execution.domain.enums import SessionStatus, SessionType
+from agent_engine.execution.domain.enums import SessionStatus
 from agent_engine.shared.models import Aggregate
-from typing import Union
 from pydantic import Field
-from agent_engine.shared.domain.value_objects.task_id import TaskId
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.shared.domain.value_objects.job_id import JobId
 
@@ -12,8 +10,6 @@ class AgentSession(Aggregate):
 
     id: SessionId
     job_id: JobId
-    task_id: TaskId | None = Field(default=None)
-    session_type: SessionType
     context_payload: dict
     status: SessionStatus
     final_output: str | None = Field(default=None)

@@ -1,22 +1,22 @@
+import uuid
+from agent_engine.execution.domain.aggregates.agent_session import AgentSession
+from agent_engine.execution.domain.enums import SessionStatus
+
 from agent_engine.execution.domain.ports.agent_gateway import AgentGateway
-from typing import Union
 from pydantic import BaseModel, Field
-from agent_engine.execution.domain.enums import SessionType
-from agent_engine.shared.domain.value_objects.task_id import TaskId
 from dataclasses import dataclass
 from agent_engine.execution.domain.ports.agent_session_repository import (
     AgentSessionRepository,
 )
 from agent_engine.shared.domain.value_objects.session_id import SessionId
-from agent_engine.execution.domain.ports.sop_repository import SopRepository
 from agent_engine.shared.domain.value_objects.job_id import JobId
 
 
 class ExecuteAgentSessionCommand(BaseModel):
     job_id: JobId
-    task_id: TaskId | None = Field(default=None)
+    system_prompt: str
     requirement: str | None = Field(default=None)
-    session_type: SessionType
+    context_payload: dict = Field(default_factory=dict)
 
 
 class ExecuteAgentSessionResult(BaseModel):
@@ -25,25 +25,18 @@ class ExecuteAgentSessionResult(BaseModel):
     output: str | None = Field(default=None)
 
 
-import uuid
-from agent_engine.execution.domain.aggregates.agent_session import AgentSession
-from agent_engine.execution.domain.enums import SessionStatus
-
 @dataclass
 class ExecuteAgentSession:
-    """核心用例：组装 SOP 与上下文，调用 AgentGateway 执行。这是 Orchestration 域中 ExecutionTriggerPort 的物理接收端。"""
+    """核心用例：接收已组装好的 system_prompt 与上下文，调用 AgentGateway 执行。这是 Orchestration 域中 ExecutionTriggerPort 的物理接收端。"""
 
     agent_gateway: AgentGateway
-    sop_repo: SopRepository
     session_repo: AgentSessionRepository
 
     async def execute(self, cmd: ExecuteAgentSessionCommand) -> ExecuteAgentSessionResult:
         session = AgentSession(
             id=SessionId(value=uuid.uuid4()),
             job_id=cmd.job_id,
-            task_id=cmd.task_id,
-            session_type=cmd.session_type,
-            context_payload={"requirement": cmd.requirement} if cmd.requirement else {},
+            context_payload=cmd.context_payload,
             status=SessionStatus.IDLE
         )
         await self.session_repo.save(session=session)
@@ -51,11 +44,9 @@ class ExecuteAgentSession:
         session.start()
         await self.session_repo.save(session=session)
 
-        sop = await self.sop_repo.get_sop(session_type=cmd.session_type)
-
         try:
             output = await self.agent_gateway.run(
-                system_prompt=sop,
+                system_prompt=cmd.system_prompt,
                 user_prompt=cmd.requirement or "Please execute your task.",
                 tools=[]
             )

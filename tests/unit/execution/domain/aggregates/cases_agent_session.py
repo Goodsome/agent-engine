@@ -1,7 +1,7 @@
 from typing import Any, Callable, NamedTuple, TypedDict
 import uuid
 from agent_engine.execution.domain.aggregates.agent_session import AgentSession
-from agent_engine.execution.domain.enums import SessionStatus, SessionType
+from agent_engine.execution.domain.enums import SessionStatus
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.shared.domain.value_objects.job_id import JobId
 
@@ -23,7 +23,6 @@ def _create_idle_session() -> AgentSession:
     return AgentSession(
         id=SessionId(value=uuid.uuid4()),
         job_id=JobId(value=uuid.uuid4()),
-        session_type=SessionType.PLANNER,
         context_payload={},
         status=SessionStatus.IDLE
     )

@@ -3,7 +3,7 @@ import uuid
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.shared.domain.value_objects.job_id import JobId
 from agent_engine.execution.domain.aggregates.agent_session import AgentSession
-from agent_engine.execution.domain.enums import SessionStatus, SessionType
+from agent_engine.execution.domain.enums import SessionStatus
 
 class SaveCase(NamedTuple):
     mocks_setup: Callable
@@ -27,7 +27,6 @@ session_id = SessionId(value=uuid.uuid4())
 dummy_session = AgentSession(
     id=session_id,
     job_id=JobId(value=uuid.uuid4()),
-    session_type=SessionType.PLANNER,
     context_payload={},
     status=SessionStatus.IDLE
 )

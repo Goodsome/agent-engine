@@ -10,47 +10,40 @@ class TestExecuteAgentSession:
         return AsyncMock()
 
     @pytest.fixture
-    def sop_repo(self) -> None:
-        return AsyncMock()
-
-    @pytest.fixture
     def session_repo(self) -> None:
         return AsyncMock()
 
     @pytest.fixture
-    def use_case(self, agent_gateway, sop_repo, session_repo) -> None:
+    def use_case(self, agent_gateway, session_repo) -> None:
         from agent_engine.execution.application.use_cases.execute_agent_session import (
             ExecuteAgentSession,
         )
 
         return ExecuteAgentSession(
-            agent_gateway=agent_gateway, sop_repo=sop_repo, session_repo=session_repo
+            agent_gateway=agent_gateway, session_repo=session_repo
         )
 
     @pytest.mark.parametrize(
-        "mocks_setup, job_id, task_id, requirement, session_type, expected",
+        "mocks_setup, job_id, system_prompt, requirement, expected",
         TEST_CASES_EXECUTE,
     )
     async def test_execute(
         self,
         use_case,
         agent_gateway,
-        sop_repo,
         session_repo,
         mocks_setup,
         job_id,
-        task_id,
+        system_prompt,
         requirement,
-        session_type,
         expected,
     ) -> None:
         from agent_engine.execution.application.use_cases.execute_agent_session import ExecuteAgentSessionCommand
-        mocks_setup(agent_gateway, sop_repo, session_repo)
+        mocks_setup(agent_gateway, session_repo)
         cmd = ExecuteAgentSessionCommand(
             job_id=job_id,
-            task_id=task_id,
+            system_prompt=system_prompt,
             requirement=requirement,
-            session_type=session_type,
         )
         result = await use_case.execute(cmd=cmd)
         if callable(expected):

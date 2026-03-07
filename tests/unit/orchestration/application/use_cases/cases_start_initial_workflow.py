@@ -8,9 +8,10 @@ class ExecuteCase(NamedTuple):
     raw_requirement: str
     expected: Any
 
-def _setup_mocks_success(job_repo, execution_trigger):
+def _setup_mocks_success(job_repo, execution_trigger, sop_repo):
     mock_session_id = SessionId(value=uuid.UUID("11111111-1111-1111-1111-111111111111"))
     execution_trigger.trigger_session.return_value = mock_session_id
+    sop_repo.get_sop.return_value = "You are a story decomposer"
 
 TEST_CASES_EXECUTE: list[ExecuteCase] = [
     ExecuteCase(
