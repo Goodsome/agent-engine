@@ -39,6 +39,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
     # 组装 Orchestration 限界上下文容器
     orchestration_container = providers.Container(
         OrchestrationContainer,
+        config=config,
         session_factory=session_factory,
         execute_agent_session=execution_container.execute_agent_session,
     )

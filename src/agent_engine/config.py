@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     )
     
     # General Configuration
+    PROJECT_ID: str = Field(
+        default="default",
+        description="Identifier for the current project"
+    )
+
     PROJECT_ROOT: str = Field(
         default=".",
         description="Root directory of the project"

@@ -12,6 +12,8 @@ from agent_engine.orchestration.application.use_cases.start_initial_workflow imp
     StartInitialWorkflowCommand,
 )
 
+from agent_engine.orchestration.interfaces.event_listener import EventListenerRunner
+
 app = typer.Typer(help="Orchestration Context Commands")
 console = Console()
 
@@ -45,3 +47,15 @@ def start_workflow(
     cmd = StartInitialWorkflowCommand(raw_requirement=requirement)
     result = _do_start_workflow(cmd)
     console.print(f"Workflow started. Initial Session ID: [bold blue]{result.initial_session_id}[/bold blue]")
+
+@inject
+def _do_listen(
+    runner: EventListenerRunner = Provide["orchestration_container.event_listener_runner"],
+):
+    return asyncio.run(runner.run())
+
+@app.command("listen")
+def listen():
+    """Start the long-running event listener for domain events."""
+    console.print("Starting event listener process...")
+    _do_listen()

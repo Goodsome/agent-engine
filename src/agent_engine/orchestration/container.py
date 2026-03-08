@@ -19,9 +19,17 @@ from agent_engine.orchestration.infrastructure.adapters.in_process_execution_tri
 from agent_engine.orchestration.infrastructure.adapters.local_file_sop_repository import (
     LocalFileSopRepository,
 )
+from agent_engine.orchestration.infrastructure.adapters.pg_notify_event_listener import (
+    PgNotifyEventListener,
+)
+from agent_engine.orchestration.application.use_cases.handle_task_ready_event import (
+    HandleTaskReadyEvent,
+)
+from agent_engine.orchestration.interfaces.event_listener import EventListenerRunner
 
 
 class Container(DeclarativeContainer):
+    config = providers.Configuration()
     session_factory = providers.Dependency()
     execute_agent_session = providers.Dependency()
 
@@ -47,4 +55,21 @@ class Container(DeclarativeContainer):
         job_repo=sql_alchemy_dispatch_job_repository,
         execution_trigger=in_process_execution_trigger,
         sop_repo=local_file_sop_repository,
+    )
+    pg_notify_event_listener = Factory(
+        PgNotifyEventListener,
+        dsn=config.task_graph_database_url,
+        channel=config.event_bus_channel,
+    )
+    handle_task_ready_event = Factory(
+        HandleTaskReadyEvent,
+        job_repo=sql_alchemy_dispatch_job_repository,
+        execution_trigger=in_process_execution_trigger,
+        sop_repo=local_file_sop_repository,
+    )
+    event_listener_runner = Factory(
+        EventListenerRunner,
+        listener=pg_notify_event_listener,
+        handle_task_ready=handle_task_ready_event,
+        project_id=config.project_id,
     )
