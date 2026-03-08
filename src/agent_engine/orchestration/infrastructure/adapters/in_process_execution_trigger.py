@@ -1,6 +1,7 @@
 from agent_engine.shared.domain.value_objects.job_id import JobId
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 from dataclasses import dataclass
+from typing import Any
 from agent_engine.orchestration.domain.ports.execution_trigger_port import (
     ExecutionTriggerPort,
 )
@@ -21,7 +22,7 @@ class InProcessExecutionTrigger(ExecutionTriggerPort):
         job_id: JobId,
         system_prompt: str,
         requirement: str | None = None,
-        context_payload: dict | None = None,
+        context_payload: dict[str, Any] | None = None,
     ) -> SessionId:
         cmd = ExecuteAgentSessionCommand(
             job_id=job_id,

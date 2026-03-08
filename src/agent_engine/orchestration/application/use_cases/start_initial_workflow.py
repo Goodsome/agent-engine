@@ -28,6 +28,7 @@ class StartInitialWorkflow:
     job_repo: DispatchJobRepository
     execution_trigger: ExecutionTriggerPort
     sop_repo: SopRepository
+    project_id: str
 
     async def execute(
         self, cmd: StartInitialWorkflowCommand
@@ -46,6 +47,7 @@ class StartInitialWorkflow:
             job_id=job.id,
             system_prompt=system_prompt,
             requirement=cmd.raw_requirement,
+            context_payload={"project_id": self.project_id},
         )
 
         job.mark_running(session_id=session_id)

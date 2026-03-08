@@ -48,6 +48,7 @@ class Container(DeclarativeContainer):
         job_repo=sql_alchemy_dispatch_job_repository,
         execution_trigger=in_process_execution_trigger,
         sop_repo=local_file_sop_repository,
+        project_id=config.PROJECT_ID,
     )
     run_event_loop_tick = Factory(
         RunEventLoopTick,
@@ -58,8 +59,8 @@ class Container(DeclarativeContainer):
     )
     pg_notify_event_listener = Factory(
         PgNotifyEventListener,
-        dsn=config.task_graph_database_url,
-        channel=config.event_bus_channel,
+        dsn=config.TASK_GRAPH_DATABASE_URL,
+        channel=config.EVENT_BUS_CHANNEL,
     )
     handle_task_ready_event = Factory(
         HandleTaskReadyEvent,
@@ -71,5 +72,5 @@ class Container(DeclarativeContainer):
         EventListenerRunner,
         listener=pg_notify_event_listener,
         handle_task_ready=handle_task_ready_event,
-        project_id=config.project_id,
+        project_id=config.PROJECT_ID,
     )

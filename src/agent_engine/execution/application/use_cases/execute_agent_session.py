@@ -1,3 +1,4 @@
+import json
 import uuid
 from agent_engine.execution.domain.aggregates.agent_session import AgentSession
 from agent_engine.execution.domain.enums import SessionStatus
@@ -10,13 +11,14 @@ from agent_engine.execution.domain.ports.agent_session_repository import (
 )
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.shared.domain.value_objects.job_id import JobId
+from typing import Any
 
 
 class ExecuteAgentSessionCommand(BaseModel):
     job_id: JobId
     system_prompt: str
     requirement: str | None = Field(default=None)
-    context_payload: dict = Field(default_factory=dict)
+    context_payload: dict[str, Any] = Field(default_factory=dict)
 
 
 class ExecuteAgentSessionResult(BaseModel):
@@ -43,10 +45,13 @@ class ExecuteAgentSession:
 
         session.start()
         await self.session_repo.save(session=session)
+        system_prompt = cmd.system_prompt
+        if cmd.context_payload:
+            system_prompt += f"\n---\ncontext_payload: {json.dumps(cmd.context_payload)}"
 
         try:
             output = await self.agent_gateway.run(
-                system_prompt=cmd.system_prompt,
+                system_prompt=system_prompt,
                 user_prompt=cmd.requirement or "",
                 tools=[]
             )
