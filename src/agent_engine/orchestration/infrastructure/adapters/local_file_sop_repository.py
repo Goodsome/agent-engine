@@ -1,6 +1,8 @@
 import os
 import frontmatter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
+import agent_engine
 from agent_engine.orchestration.domain.ports.sop_repository import SopRepository
 
 
@@ -8,7 +10,7 @@ from agent_engine.orchestration.domain.ports.sop_repository import SopRepository
 class LocalFileSopRepository(SopRepository):
     """从本地文件系统（sops/ 目录）读取带有 Frontmatter 的 Markdown 格式 SOP，并整理为 system_prompt"""
 
-    base_dir: str = "sops"
+    base_dir: str = field(default_factory=lambda: str(Path(agent_engine.__file__).parent / "sops"))
 
     async def get_sop(self, planning_level: str, status: str) -> str:
         filename = f"{planning_level}_{status}.md"

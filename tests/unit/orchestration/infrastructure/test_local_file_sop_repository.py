@@ -8,8 +8,8 @@ class TestLocalFileSopRepository:
         from agent_engine.orchestration.infrastructure.adapters.local_file_sop_repository import (
             LocalFileSopRepository,
         )
-        # Pointing to the real `sops/` directory for this test
-        return LocalFileSopRepository(base_dir="sops")
+        # Pointing to the real `sops/` directory for this test by default
+        return LocalFileSopRepository()
 
     @pytest.mark.parametrize("mocks_setup, planning_level, status, expected", TEST_CASES_GET_SOP)
     async def test_get_sop(self, local_file_sop_repository, mocks_setup, planning_level, status, expected) -> None:

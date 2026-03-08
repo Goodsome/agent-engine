@@ -1,11 +1,13 @@
 from pathlib import Path
+import os
 
 from pydantic import PostgresDsn, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-
-_ENV_FILE_PATH = PROJECT_ROOT / ".env"
+# Set up global configuration path for CLI usage across different projects
+GLOBAL_CONFIG_DIR = Path.home() / ".agent-engine"
+GLOBAL_ENV_FILE = GLOBAL_CONFIG_DIR / ".env"
+LOCAL_ENV_FILE = Path.cwd() / ".env"
 
 class Settings(BaseSettings):
     """
@@ -48,7 +50,8 @@ class Settings(BaseSettings):
     )
 
     model_config = SettingsConfigDict(
-        env_file=_ENV_FILE_PATH,
+        # Load global first, then allow local .env to override
+        env_file=(GLOBAL_ENV_FILE, LOCAL_ENV_FILE),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore"  # Ignore unexpected environment variables
