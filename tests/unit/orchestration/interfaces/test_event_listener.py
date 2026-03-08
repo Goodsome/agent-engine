@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 from agent_engine.orchestration.interfaces.event_listener import EventListenerRunner
 from agent_engine.orchestration.domain.events.task_ready_event import TaskReadyEvent
 from agent_engine.shared.domain.value_objects.task_id import TaskId
+from agent_engine.orchestration.domain.enums import PlanningLevel, TaskStatus
 import uuid
 
 class TestEventListenerRunner:
@@ -33,16 +34,12 @@ class TestEventListenerRunner:
             yield TaskReadyEvent(
                 project_id="other_project",
                 task_id=TaskId(value=uuid.uuid4()),
-                planning_level="l1",
-                status="ready",
-                occurred_at="now"
+                planning_level=PlanningLevel.ATOMIC
             )
             yield TaskReadyEvent(
                 project_id="target_project",
                 task_id=TaskId(value=uuid.uuid4()),
-                planning_level="l1",
-                status="ready",
-                occurred_at="now"
+                planning_level=PlanningLevel.ATOMIC
             )
 
         listener.listen.return_value = mock_listen()

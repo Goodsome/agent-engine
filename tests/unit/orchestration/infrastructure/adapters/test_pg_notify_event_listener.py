@@ -1,8 +1,10 @@
 import json
 import uuid
+from datetime import datetime, timezone
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from agent_engine.orchestration.infrastructure.adapters.pg_notify_event_listener import PgNotifyEventListener
+from agent_engine.orchestration.domain.enums import PlanningLevel, TaskStatus
 
 class TestPgNotifyEventListener:
     @pytest.fixture
@@ -26,13 +28,19 @@ class TestPgNotifyEventListener:
                 self.payload = payload
                 
         async def mock_notifies():
+            # NOTE: When using json.loads and then TaskReadyEvent(**data), 
+            # Pydantic might struggle if it expects an Enum object but gets a string from JSON.
+            # However, Pydantic usually handles string-to-enum conversion.
+            # The error "Input should be <TaskStatus.READY: 'ready'>" with Literal[TaskStatus.READY] 
+            # suggests it wants the actual Enum member if possible, or it's a Pydantic 2 specific strictness.
+            
             valid_payload = {
                 "event_type": "TaskReadyEvent",
                 "project_id": "proj_1",
                 "task_id": {"value": "12345678-1234-5678-1234-567812345678"},
-                "planning_level": "test",
-                "status": "ready",
-                "occurred_at": "now"
+                "planning_level": PlanningLevel.ATOMIC.value,
+                "status": TaskStatus.READY.value,
+                "occurred_at": datetime.now(timezone.utc).isoformat()
             }
             # Add an invalid payload to test try-except
             yield MockNotify("invalid json")
@@ -62,7 +70,11 @@ class TestPgNotifyEventListener:
             yield # make it a generator
         mock_conn.notifies.return_value = mock_notifies()
         
-        async for _ in listener.listen():
+        # establish connection
+        it = listener.listen()
+        try:
+            await it.__anext__()
+        except StopAsyncIteration:
             pass
             
         # mock closed property

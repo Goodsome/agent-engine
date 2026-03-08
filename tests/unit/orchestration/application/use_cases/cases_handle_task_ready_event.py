@@ -4,6 +4,7 @@ from agent_engine.shared.domain.value_objects.task_id import TaskId
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.orchestration.domain.events.task_ready_event import TaskReadyEvent
 from agent_engine.orchestration.application.use_cases.handle_task_ready_event import HandleTaskReadyEventResult
+from agent_engine.orchestration.domain.enums import PlanningLevel, TaskStatus
 
 class ExecuteCase(NamedTuple):
     mocks_setup: Callable
@@ -26,9 +27,8 @@ TEST_CASES_EXECUTE: list[ExecuteCase] = [
         event=TaskReadyEvent(
             project_id="test_project",
             task_id=TaskId(value=uuid.UUID("87654321-4321-8765-4321-876543210987")),
-            planning_level="architecture",
-            status="design",
-            occurred_at="2026-03-08T10:00:00Z"
+            planning_level=PlanningLevel.ARCHITECTURAL,
+            status=TaskStatus.READY
         ),
         expected=_assert_success
     )

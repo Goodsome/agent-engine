@@ -24,7 +24,10 @@ class TestStartInitialWorkflow:
         )
 
         return StartInitialWorkflow(
-            job_repo=job_repo, execution_trigger=execution_trigger, sop_repo=sop_repo
+            job_repo=job_repo,
+            execution_trigger=execution_trigger,
+            sop_repo=sop_repo,
+            project_id="test_project",
         )
 
     @pytest.mark.parametrize(
