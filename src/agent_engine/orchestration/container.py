@@ -23,13 +23,17 @@ from agent_engine.orchestration.infrastructure.adapters.local_file_sop_repositor
 
 class Container(DeclarativeContainer):
     session_factory = providers.Dependency()
+    execute_agent_session = providers.Dependency()
 
     task_graph_adapter = Factory(TaskGraphAdapter)
     sql_alchemy_dispatch_job_repository = Factory(
         SqlAlchemyDispatchJobRepository,
         session_factory=session_factory,
     )
-    in_process_execution_trigger = Factory(InProcessExecutionTrigger)
+    in_process_execution_trigger = Factory(
+        InProcessExecutionTrigger,
+        execute_agent_session=execute_agent_session,
+    )
     local_file_sop_repository = Factory(LocalFileSopRepository)
     start_initial_workflow = Factory(
         StartInitialWorkflow,

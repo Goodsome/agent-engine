@@ -40,6 +40,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
     orchestration_container = providers.Container(
         OrchestrationContainer,
         session_factory=session_factory,
+        execute_agent_session=execution_container.execute_agent_session,
     )
 
 

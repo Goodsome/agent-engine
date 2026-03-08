@@ -9,7 +9,7 @@ class ClaudeAgentGateway(AgentGateway):
     """封装对 Claude Agent SDK 的调用，将工具和 Prompt 注入并执行"""
 
     async def run(self, system_prompt: str, user_prompt: str, tools: list[str]) -> str:
-        prompt = f"{system_prompt}\n\n{user_prompt}"
+        prompt = f"{system_prompt}\n---\n{user_prompt}"
         allowed_tools = tools if tools else ["Read", "Edit", "Glob"]
         
         output_text = []

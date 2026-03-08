@@ -47,7 +47,7 @@ class ExecuteAgentSession:
         try:
             output = await self.agent_gateway.run(
                 system_prompt=cmd.system_prompt,
-                user_prompt=cmd.requirement or "Please execute your task.",
+                user_prompt=cmd.requirement or "",
                 tools=[]
             )
             session.finish_with_success(output=output)
