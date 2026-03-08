@@ -1,7 +1,11 @@
 import typer
 from agent_engine.bootstrap import bootstrap
-from agent_engine.execution.interfaces.cli import app as execution_app
-from agent_engine.orchestration.interfaces.cli import app as orchestration_app
+from agent_engine.execution.interfaces.cli import execute_session
+from agent_engine.orchestration.interfaces.cli import (
+    listen,
+    start_workflow,
+    tick,
+)
 
 app = typer.Typer(
     name="agent-engine",
@@ -9,8 +13,11 @@ app = typer.Typer(
     add_completion=False,
 )
 
-app.add_typer(execution_app, name="execution")
-app.add_typer(orchestration_app, name="orchestration")
+app.command(name="execute-session")(execute_session)
+app.command(name="listen")(listen)
+app.command(name="start-workflow")(start_workflow)
+app.command(name="tick")(tick)
+
 
 def main():
     # Bootstrap the DI container

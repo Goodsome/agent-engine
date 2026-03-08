@@ -14,7 +14,6 @@ from agent_engine.orchestration.application.use_cases.start_initial_workflow imp
 
 from agent_engine.orchestration.interfaces.event_listener import EventListenerRunner
 
-app = typer.Typer(help="Orchestration Context Commands")
 console = Console()
 
 @inject
@@ -24,7 +23,6 @@ def _do_tick(
     cmd = RunEventLoopTickCommand()
     return asyncio.run(run_tick_use_case.execute(cmd))
 
-@app.command("tick")
 def tick():
     """Run a single tick of the event loop."""
     console.print("Running event loop tick...")
@@ -38,7 +36,6 @@ def _do_start_workflow(
 ):
     return asyncio.run(start_workflow_use_case.execute(cmd))
 
-@app.command("start-workflow")
 def start_workflow(
     requirement: str = typer.Argument(..., help="The raw requirement to start the workflow"),
 ):
@@ -54,7 +51,6 @@ def _do_listen(
 ):
     return asyncio.run(runner.run())
 
-@app.command("listen")
 def listen():
     """Start the long-running event listener for domain events."""
     console.print("Starting event listener process...")

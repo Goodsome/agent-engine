@@ -8,19 +8,21 @@ from agent_engine.orchestration.domain.ports.domain_event_listener_port import (
     DomainEventListenerPort,
 )
 
+from pydantic import PostgresDsn
+
 logger = logging.getLogger(__name__)
 
 
 class PgNotifyEventListener(DomainEventListenerPort):
     """基于 PostgreSQL LISTEN/NOTIFY 的领域事件监听实现"""
 
-    def __init__(self, dsn: str, channel: str):
+    def __init__(self, dsn: str | PostgresDsn, channel: str):
         self._dsn = dsn
         self._channel = channel
         self._conn: psycopg.AsyncConnection | None = None
 
     async def listen(self) -> AsyncIterator[TaskReadyEvent]:
-        dsn = self._dsn
+        dsn = str(self._dsn)
         # 统一处理 SQLAlchemy 的 DSN 格式以兼容 psycopg 原生连接
         if dsn.startswith("postgresql+psycopg://"):
             dsn = dsn.replace("postgresql+psycopg://", "postgresql://", 1)

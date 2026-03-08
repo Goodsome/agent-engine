@@ -22,7 +22,6 @@ def _do_execute_session(
 ):
     return asyncio.run(execute_use_case.execute(cmd))
 
-@app.command("execute-session")
 def execute_session(
     system_prompt: str = typer.Argument(..., help="The system prompt for the agent"),
     requirement: str = typer.Option(None, "--requirement", "-r", help="The user requirement"),
