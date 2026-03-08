@@ -1,24 +1,30 @@
+from dataclasses import dataclass
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
 from agent_engine.orchestration.domain.aggregates.dispatch_job import DispatchJob
 from agent_engine.orchestration.domain.ports.dispatch_job_repository import (
     DispatchJobRepository,
 )
-from dataclasses import dataclass, field
-
 from agent_engine.shared.domain.value_objects.job_id import JobId
 
 
 @dataclass
 class SqlAlchemyDispatchJobRepository(DispatchJobRepository):
-    """使用 PostgreSQL/SQLite 持久化 Job 记录"""
+    """使用 PostgreSQL 持久化 Job 记录"""
     
-    _storage: dict[str, DispatchJob] = field(default_factory=dict)
+    session_factory: async_sessionmaker[AsyncSession]
 
     async def save(self, job: DispatchJob) -> None:
-        self._storage[str(job.id.value)] = job
+        async with self.session_factory() as db_session:
+            # TODO: 映射 Domain Object -> SQLAlchemy Model
+            # db_session.add(model)
+            # await db_session.commit()
+            pass
 
     async def delete(self, dispatch_job_id: JobId) -> None:
-        if str(dispatch_job_id.value) in self._storage:
-            del self._storage[str(dispatch_job_id.value)]
+        async with self.session_factory() as db_session:
+            pass
 
     async def find_by_id(self, dispatch_job_id: JobId) -> DispatchJob | None:
-        return self._storage.get(str(dispatch_job_id.value))
+        async with self.session_factory() as db_session:
+            return None

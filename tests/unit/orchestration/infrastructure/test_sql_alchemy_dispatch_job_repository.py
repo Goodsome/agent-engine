@@ -11,11 +11,17 @@ class TestSqlAlchemyDispatchJobRepository:
 
     @pytest.fixture
     def sql_alchemy_dispatch_job_repository(self) -> None:
+        from unittest.mock import AsyncMock, MagicMock
         from agent_engine.orchestration.infrastructure.repositories.sql_alchemy_dispatch_job_repository import (
             SqlAlchemyDispatchJobRepository,
         )
 
-        return SqlAlchemyDispatchJobRepository()
+        mock_session = AsyncMock()
+        mock_session.__aenter__.return_value = mock_session
+        mock_session.__aexit__.return_value = None
+        mock_session_factory = MagicMock(return_value=mock_session)
+
+        return SqlAlchemyDispatchJobRepository(session_factory=mock_session_factory)
 
     @pytest.mark.parametrize("mocks_setup, job, expected", TEST_CASES_SAVE)
     async def test_save(

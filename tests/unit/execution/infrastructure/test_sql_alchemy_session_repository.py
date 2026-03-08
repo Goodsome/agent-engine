@@ -11,11 +11,17 @@ class TestSqlAlchemySessionRepository:
 
     @pytest.fixture
     def sql_alchemy_session_repository(self) -> None:
+        from unittest.mock import AsyncMock, MagicMock
         from agent_engine.execution.infrastructure.repositories.sql_alchemy_session_repository import (
             SqlAlchemySessionRepository,
         )
 
-        return SqlAlchemySessionRepository()
+        mock_session = AsyncMock()
+        mock_session.__aenter__.return_value = mock_session
+        mock_session.__aexit__.return_value = None
+        mock_session_factory = MagicMock(return_value=mock_session)
+
+        return SqlAlchemySessionRepository(session_factory=mock_session_factory)
 
     @pytest.mark.parametrize("mocks_setup, session, expected", TEST_CASES_SAVE)
     async def test_save(

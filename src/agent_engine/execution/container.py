@@ -12,8 +12,13 @@ from agent_engine.execution.application.use_cases.execute_agent_session import (
 
 
 class Container(DeclarativeContainer):
+    session_factory = providers.Dependency()
+
     claude_agent_gateway = Factory(ClaudeAgentGateway)
-    sql_alchemy_session_repository = Factory(SqlAlchemySessionRepository)
+    sql_alchemy_session_repository = Factory(
+        SqlAlchemySessionRepository,
+        session_factory=session_factory,
+    )
     execute_agent_session = Factory(
         ExecuteAgentSession,
         agent_gateway=claude_agent_gateway,
