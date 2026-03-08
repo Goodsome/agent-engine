@@ -13,13 +13,16 @@ class LocalFileSopRepository(SopRepository):
     base_dir: str = field(default_factory=lambda: str(Path(agent_engine.__file__).parent / "sops"))
 
     async def get_sop(self, planning_level: str, status: str) -> str:
-        filename = f"{planning_level}_{status}.md"
+        # Ensure values are used if they are Enums
+        pl = getattr(planning_level, "value", planning_level)
+        st = getattr(status, "value", status)
+        filename = f"{pl}_{st}.md"
         file_path = os.path.join(self.base_dir, filename)
 
         if not os.path.exists(file_path):
             raise FileNotFoundError(
                 f"SOP file not found: {file_path} "
-                f"(planning_level={planning_level}, status={status})"
+                f"(planning_level={pl}, status={st})"
             )
 
         post = frontmatter.load(file_path)

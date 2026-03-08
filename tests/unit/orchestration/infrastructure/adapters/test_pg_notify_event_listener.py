@@ -28,13 +28,7 @@ class TestPgNotifyEventListener:
                 self.payload = payload
                 
         async def mock_notifies():
-            # NOTE: When using json.loads and then TaskReadyEvent(**data), 
-            # Pydantic might struggle if it expects an Enum object but gets a string from JSON.
-            # However, Pydantic usually handles string-to-enum conversion.
-            # The error "Input should be <TaskStatus.READY: 'ready'>" with Literal[TaskStatus.READY] 
-            # suggests it wants the actual Enum member if possible, or it's a Pydantic 2 specific strictness.
-            
-            valid_payload = {
+            valid_payload_ready = {
                 "event_type": "TaskReadyEvent",
                 "project_id": "proj_1",
                 "task_id": {"value": "12345678-1234-5678-1234-567812345678"},
@@ -42,10 +36,19 @@ class TestPgNotifyEventListener:
                 "status": TaskStatus.READY.value,
                 "occurred_at": datetime.now(timezone.utc).isoformat()
             }
+            valid_payload_review = {
+                "event_type": "TaskReviewRequestedEvent",
+                "project_id": "proj_1",
+                "task_id": {"value": "87654321-4321-8765-4321-876543210987"},
+                "planning_level": PlanningLevel.FEATURE.value,
+                "status": TaskStatus.REVIEW.value,
+                "occurred_at": datetime.now(timezone.utc).isoformat()
+            }
             # Add an invalid payload to test try-except
             yield MockNotify("invalid json")
             yield MockNotify(json.dumps({"event_type": "UnknownEvent"}))
-            yield MockNotify(json.dumps(valid_payload))
+            yield MockNotify(json.dumps(valid_payload_ready))
+            yield MockNotify(json.dumps(valid_payload_review))
             
         mock_conn.notifies.return_value = mock_notifies()
         
@@ -53,9 +56,11 @@ class TestPgNotifyEventListener:
         async for event in listener.listen():
             events.append(event)
             
-        assert len(events) == 1
+        assert len(events) == 2
         assert events[0].project_id == "proj_1"
         assert events[0].event_type == "TaskReadyEvent"
+        assert events[1].project_id == "proj_1"
+        assert events[1].event_type == "TaskReviewRequestedEvent"
         
         mock_connect.assert_called_once()
         mock_conn.execute.assert_called_once_with("LISTEN test_channel")

@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from .cases_handle_task_ready_event import TEST_CASES_EXECUTE
+from .cases_handle_dispatchable_task_event import TEST_CASES_EXECUTE
 
-class TestHandleTaskReadyEvent:
+class TestHandleDispatchableTaskEvent:
 
     @pytest.fixture
     def job_repo(self) -> AsyncMock:
@@ -18,11 +18,11 @@ class TestHandleTaskReadyEvent:
 
     @pytest.fixture
     def use_case(self, job_repo, execution_trigger, sop_repo) -> None:
-        from agent_engine.orchestration.application.use_cases.handle_task_ready_event import (
-            HandleTaskReadyEvent,
+        from agent_engine.orchestration.application.use_cases.handle_dispatchable_task_event import (
+            HandleDispatchableTaskEvent,
         )
 
-        return HandleTaskReadyEvent(
+        return HandleDispatchableTaskEvent(
             job_repo=job_repo,
             execution_trigger=execution_trigger,
             sop_repo=sop_repo,

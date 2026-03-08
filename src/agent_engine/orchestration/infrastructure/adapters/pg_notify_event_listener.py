@@ -4,8 +4,10 @@ import psycopg
 from collections.abc import AsyncIterator
 
 from agent_engine.orchestration.domain.events.task_ready_event import TaskReadyEvent
+from agent_engine.orchestration.domain.events.task_review_requested_event import TaskReviewRequestedEvent
 from agent_engine.orchestration.domain.ports.domain_event_listener_port import (
     DomainEventListenerPort,
+    DispatchableTaskEvent,
 )
 
 from pydantic import PostgresDsn
@@ -21,7 +23,7 @@ class PgNotifyEventListener(DomainEventListenerPort):
         self._channel = channel
         self._conn: psycopg.AsyncConnection | None = None
 
-    async def listen(self) -> AsyncIterator[TaskReadyEvent]:
+    async def listen(self) -> AsyncIterator[DispatchableTaskEvent]:
         dsn = str(self._dsn)
         # 统一处理 SQLAlchemy 的 DSN 格式以兼容 psycopg 原生连接
         if dsn.startswith("postgresql+psycopg://"):
@@ -34,8 +36,11 @@ class PgNotifyEventListener(DomainEventListenerPort):
         async for notify in self._conn.notifies():
             try:
                 data = json.loads(notify.payload)
-                if data.get("event_type") == "TaskReadyEvent":
-                    yield TaskReadyEvent(**data)
+                event_type = data.get("event_type")
+                if event_type == "TaskReadyEvent":
+                    yield TaskReadyEvent.model_validate(data)
+                elif event_type == "TaskReviewRequestedEvent":
+                    yield TaskReviewRequestedEvent.model_validate(data)
             except Exception as e:
                 # 添加异常保护，防止无效负载导致循环中断
                 logger.error(f"❌ 解析事件载荷失败: {e}, payload: {notify.payload}")

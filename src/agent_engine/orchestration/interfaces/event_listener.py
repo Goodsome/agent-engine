@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from agent_engine.orchestration.domain.ports.domain_event_listener_port import (
     DomainEventListenerPort,
 )
-from agent_engine.orchestration.application.use_cases.handle_task_ready_event import (
-    HandleTaskReadyEvent,
+from agent_engine.orchestration.application.use_cases.handle_dispatchable_task_event import (
+    HandleDispatchableTaskEvent,
 )
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class EventListenerRunner:
     """长驻进程：持续监听领域事件并分派给对应的 Use Case"""
 
     listener: DomainEventListenerPort
-    handle_task_ready: HandleTaskReadyEvent
+    handle_dispatchable_task: HandleDispatchableTaskEvent
     project_id: str
 
     async def run(self) -> None:
@@ -33,7 +33,7 @@ class EventListenerRunner:
 
                 logger.info(f"🔔 收到当前项目事件: {event.event_type} task_id={event.task_id.value}")
                 try:
-                    result = await self.handle_task_ready.execute(event)
+                    result = await self.handle_dispatchable_task.execute(event)
                     logger.info(f"✅ 已调度 job={result.job_id}, session={result.session_id}")
                 except Exception as e:
                     logger.exception(f"❌ 处理事件失败: {e}")
