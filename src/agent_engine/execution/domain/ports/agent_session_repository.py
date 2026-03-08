@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from agent_engine.execution.domain.aggregates.agent_session import AgentSession
 
-from src.agent_engine.shared.domain.value_objects.session_id import SessionId
+from agent_engine.shared.domain.value_objects.session_id import SessionId
 
 
 class AgentSessionRepository(ABC):

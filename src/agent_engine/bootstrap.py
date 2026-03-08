@@ -32,6 +32,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
     # 组装 Execution 限界上下文容器
     execution_container = providers.Container(
         ExecutionContainer,
+        config=config,
         session_factory=session_factory,
     )
 

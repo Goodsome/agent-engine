@@ -11,7 +11,14 @@ dependencies = [
     "pydantic>=2.12.5",
     "python-frontmatter>=1.1.0",
     "sqlalchemy[asyncio]>=2.0.48",
+    "typer>=0.24.1",
 ]
+
+[project.scripts]
+agent-engine = "agent_engine.entrypoints.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_engine"]
 
 [dependency-groups]
 dev = [

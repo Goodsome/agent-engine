@@ -11,6 +11,7 @@ from agent_engine.orchestration.infrastructure.repositories.sql_alchemy_dispatch
     SqlAlchemyDispatchJobRepository,
 )
 from dependency_injector.containers import DeclarativeContainer
+from dependency_injector import providers
 from dependency_injector.providers import Factory
 from agent_engine.orchestration.infrastructure.adapters.in_process_execution_trigger import (
     InProcessExecutionTrigger,

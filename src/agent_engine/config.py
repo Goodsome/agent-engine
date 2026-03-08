@@ -23,6 +23,12 @@ class Settings(BaseSettings):
         description="PostgreSQL Task Graph Database Connection String"
     )
 
+    # Agent Configuration
+    AGENT_PROVIDER: str = Field(
+        default="gemini",
+        description="The agent provider to use (claude or gemini)"
+    )
+
     # Logging Configuration
     LOG_LEVEL: str = Field(
         default="INFO",
