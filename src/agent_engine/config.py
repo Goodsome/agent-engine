@@ -2,7 +2,6 @@ from pathlib import Path
 
 from pydantic import PostgresDsn, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from typing import Optional
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -14,9 +13,14 @@ class Settings(BaseSettings):
     Loads configuration from environment variables and .env files.
     """
     # Database Configuration
-    DATABASE_URL: Optional[PostgresDsn] = Field(
+    DATABASE_URL: PostgresDsn | None = Field(
         default=None,
         description="PostgreSQL Database Connection String"
+    )
+    
+    TASK_GRAPH_DATABASE_URL: PostgresDsn | None = Field(
+        default=None,
+        description="PostgreSQL Task Graph Database Connection String"
     )
 
     # Logging Configuration
@@ -25,6 +29,12 @@ class Settings(BaseSettings):
         description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
     )
 
+    # Event Bus Configuration
+    EVENT_BUS_CHANNEL: str = Field(
+        default="domain_events",
+        description="PostgreSQL NOTIFY channel for domain events"
+    )
+    
     # General Configuration
     PROJECT_ROOT: str = Field(
         default=".",
@@ -38,7 +48,7 @@ class Settings(BaseSettings):
         extra="ignore"  # Ignore unexpected environment variables
     )
 
-_settings: Optional[Settings] = None
+_settings: Settings | None = None
 
 def get_settings() -> Settings:
     """Singleton getter for settings."""

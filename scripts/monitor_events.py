@@ -3,10 +3,9 @@ import json
 import psycopg
 from datetime import datetime
 
-# 数据库连接配置
-# 格式: postgresql://user:password@host:port/dbname
-DB_DSN = "postgresql://postgres:postgres@localhost:5432/task_graph"
-CHANNEL_NAME = "task_events"
+from agent_engine.config import get_settings
+
+CHANNEL_NAME = "domain_events"
 
 async def event_handler(payload: str):
     """处理接收到的事件数据"""
@@ -30,9 +29,22 @@ async def event_handler(payload: str):
 
 async def listen_for_events():
     """监听 PostgreSQL NOTIFY 的主循环"""
+    settings = get_settings()
+    
+    if not settings.TASK_GRAPH_DATABASE_URL:
+        print("❌ DATABASE_URL is not set in environment variables or .env file.")
+        return
+
+    # Pydantic 的 DSN 默认是 postgresql://，如果包含 +psycopg 则替换为原生协议
+    db_url = str(settings.TASK_GRAPH_DATABASE_URL)
+    if db_url.startswith("postgresql+psycopg://"):
+        db_url = db_url.replace("postgresql+psycopg://", "postgresql://", 1)
+
     try:
-        # 使用 autocommit=True，因为 LISTEN 命令不需要开启事务
-        async with await psycopg.AsyncConnection.connect(DB_DSN, autocommit=True) as conn:
+        # 注意：这里继续使用原生的 psycopg.AsyncConnection 是非常正确的！
+        # 因为 LISTEN 命令会一直阻塞当前连接，我们绝对不能使用 SQLAlchemy 的引擎连接池 (Engine)
+        # 否则这个常驻进程会长期霸占并消耗尽池里的一个工作连接。
+        async with await psycopg.AsyncConnection.connect(db_url, autocommit=True) as conn:
             print(f"✅ 已连接到数据库，正在监听频道: '{CHANNEL_NAME}'...")
             
             # 执行 LISTEN 指令
