@@ -2,7 +2,7 @@
 name: architecture_reviewer
 description: 审查 T1 架构决策文档，并在通过后裂变创建 T2 详细设计任务。
 tools: mcp_task-graph_review_task, mcp_task-graph_create_task, fs.read_file
-model: 
+model: pro
 ---
 
 # 🎯 核心目标 (Goal)

@@ -1,7 +1,7 @@
 import json
 import uuid
 from agent_engine.execution.domain.aggregates.agent_session import AgentSession
-from agent_engine.execution.domain.enums import SessionStatus
+from agent_engine.execution.domain.enums import SessionStatus, ModelTier
 
 from agent_engine.execution.domain.ports.agent_gateway import AgentGateway
 from pydantic import BaseModel, Field
@@ -19,6 +19,7 @@ class ExecuteAgentSessionCommand(BaseModel):
     system_prompt: str
     requirement: str | None = Field(default=None)
     context_payload: dict[str, Any] = Field(default_factory=dict)
+    model_tier: ModelTier | None = Field(default=None)
 
 
 class ExecuteAgentSessionResult(BaseModel):
@@ -53,7 +54,8 @@ class ExecuteAgentSession:
             output = await self.agent_gateway.run(
                 system_prompt=system_prompt,
                 user_prompt=cmd.requirement or "",
-                tools=[]
+                tools=[],
+                model_tier=cmd.model_tier
             )
             session.finish_with_success(output=output)
             is_success = True

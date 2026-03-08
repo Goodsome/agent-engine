@@ -2,6 +2,7 @@ from typing import Any, Callable, NamedTuple, TypedDict
 import uuid
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.orchestration.application.use_cases.start_initial_workflow import StartInitialWorkflowResult
+from agent_engine.orchestration.domain.value_objects.sop_content import SopContent
 
 class ExecuteCase(NamedTuple):
     mocks_setup: Callable
@@ -11,7 +12,7 @@ class ExecuteCase(NamedTuple):
 def _setup_mocks_success(job_repo, execution_trigger, sop_repo):
     mock_session_id = SessionId(value=uuid.UUID("11111111-1111-1111-1111-111111111111"))
     execution_trigger.trigger_session.return_value = mock_session_id
-    sop_repo.get_sop.return_value = "You are a story decomposer"
+    sop_repo.get_sop.return_value = SopContent(system_prompt="You are a story decomposer", model_tier="pro")
 
 TEST_CASES_EXECUTE: list[ExecuteCase] = [
     ExecuteCase(

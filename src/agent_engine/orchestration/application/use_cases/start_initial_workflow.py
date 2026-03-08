@@ -39,13 +39,14 @@ class StartInitialWorkflow:
         )
         await self.job_repo.save(job=job)
 
-        system_prompt = await self.sop_repo.get_sop(
+        sop_content = await self.sop_repo.get_sop(
             planning_level="story", status="ready"
         )
 
         session_id = await self.execution_trigger.trigger_session(
             job_id=job.id,
-            system_prompt=system_prompt,
+            system_prompt=sop_content.system_prompt,
+            model_tier=sop_content.model_tier,
             requirement=cmd.raw_requirement,
             context_payload={"project_id": self.project_id},
         )

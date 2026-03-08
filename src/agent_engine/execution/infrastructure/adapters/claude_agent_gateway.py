@@ -1,5 +1,6 @@
 import asyncio
 from agent_engine.execution.domain.ports.agent_gateway import AgentGateway
+from agent_engine.execution.domain.enums import ModelTier
 from dataclasses import dataclass
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, ResultMessage
 
@@ -8,16 +9,23 @@ from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, Result
 class ClaudeAgentGateway(AgentGateway):
     """封装对 Claude Agent SDK 的调用，将工具和 Prompt 注入并执行"""
 
-    async def run(self, system_prompt: str, user_prompt: str, tools: list[str]) -> str:
+    async def run(self, system_prompt: str, user_prompt: str, tools: list[str], model_tier: ModelTier | None = None) -> str:
         prompt = f"{system_prompt}\n---\n{user_prompt}"
         allowed_tools = tools if tools else ["Read", "Edit", "Glob"]
         
+        model = None
+        if model_tier == ModelTier.PRO:
+            model = "opus"
+        elif model_tier == ModelTier.FAST:
+            model = "sonnet"
+
         output_text = []
         async for message in query(
             prompt=prompt,
             options=ClaudeAgentOptions(
                 allowed_tools=allowed_tools,
-                permission_mode="acceptEdits"
+                permission_mode="acceptEdits",
+                model=model,
             )
         ):
             if isinstance(message, AssistantMessage):

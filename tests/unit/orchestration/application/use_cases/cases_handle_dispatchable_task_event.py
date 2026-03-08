@@ -6,6 +6,7 @@ from agent_engine.orchestration.domain.events.task_ready_event import TaskReadyE
 from agent_engine.orchestration.domain.events.task_review_requested_event import TaskReviewRequestedEvent
 from agent_engine.orchestration.application.use_cases.handle_dispatchable_task_event import HandleDispatchableTaskEventResult
 from agent_engine.orchestration.domain.enums import PlanningLevel, TaskStatus
+from agent_engine.orchestration.domain.value_objects.sop_content import SopContent
 
 class ExecuteCase(NamedTuple):
     mocks_setup: Callable
@@ -14,7 +15,7 @@ class ExecuteCase(NamedTuple):
 
 def _setup_mocks_success(job_repo, execution_trigger, sop_repo):
     execution_trigger.trigger_session.return_value = SessionId(value=uuid.UUID("12345678-1234-5678-1234-567812345678"))
-    sop_repo.get_sop.return_value = "You are a helpful agent"
+    sop_repo.get_sop.return_value = SopContent(system_prompt="You are a helpful agent", model_tier="pro")
     # mock save to just return
     job_repo.save.return_value = None
 

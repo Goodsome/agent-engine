@@ -5,6 +5,7 @@ from typing import Any
 from agent_engine.orchestration.domain.ports.execution_trigger_port import (
     ExecutionTriggerPort,
 )
+from agent_engine.execution.domain.enums import ModelTier
 from agent_engine.execution.application.use_cases.execute_agent_session import (
     ExecuteAgentSession,
     ExecuteAgentSessionCommand,
@@ -23,12 +24,14 @@ class InProcessExecutionTrigger(ExecutionTriggerPort):
         system_prompt: str,
         requirement: str | None = None,
         context_payload: dict[str, Any] | None = None,
+        model_tier: ModelTier | None = None,
     ) -> SessionId:
         cmd = ExecuteAgentSessionCommand(
             job_id=job_id,
             system_prompt=system_prompt,
             requirement=requirement,
             context_payload=context_payload or {},
+            model_tier=model_tier,
         )
         result = await self.execute_agent_session.execute(cmd)
         return result.session_id

@@ -10,6 +10,9 @@ from agent_engine.execution.infrastructure.adapters.claude_agent_gateway import 
 from agent_engine.execution.infrastructure.adapters.gemini_agent_gateway import (
     GeminiAgentGateway,
 )
+from agent_engine.execution.infrastructure.adapters.agent_gateway_router import (
+    AgentGatewayRouter,
+)
 from agent_engine.execution.application.use_cases.execute_agent_session import (
     ExecuteAgentSession,
 )
@@ -22,12 +25,12 @@ class Container(DeclarativeContainer):
     claude_agent_gateway = Factory(ClaudeAgentGateway)
     gemini_agent_gateway = Factory(GeminiAgentGateway)
 
-    # 通过配置选择不同的 Agent 网关
-    agent_gateway = providers.Selector(
-        config.AGENT_PROVIDER,
-        claude=claude_agent_gateway,
-        gemini=gemini_agent_gateway,
-        default=gemini_agent_gateway,
+    # 动态路由网关，根据 model 参数选择底层实现
+    agent_gateway = Factory(
+        AgentGatewayRouter,
+        claude_gateway=claude_agent_gateway,
+        gemini_gateway=gemini_agent_gateway,
+        default_provider=config.AGENT_PROVIDER,
     )
 
     sql_alchemy_session_repository = Factory(

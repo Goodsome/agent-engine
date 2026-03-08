@@ -38,14 +38,15 @@ class HandleDispatchableTaskEvent:
         )
         await self.job_repo.save(job=job)
 
-        system_prompt = await self.sop_repo.get_sop(
+        sop_content = await self.sop_repo.get_sop(
             planning_level=event.planning_level,
             status=event.status,
         )
 
         session_id = await self.execution_trigger.trigger_session(
             job_id=job.id,
-            system_prompt=system_prompt,
+            system_prompt=sop_content.system_prompt,
+            model_tier=sop_content.model_tier,
             requirement=f"执行任务(状态:{event.status.value}): {event.task_id.value}",
             context_payload={"task_id": str(event.task_id.value), "status": event.status.value},
         )

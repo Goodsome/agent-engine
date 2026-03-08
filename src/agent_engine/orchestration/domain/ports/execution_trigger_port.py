@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from agent_engine.shared.domain.value_objects.job_id import JobId
 from agent_engine.shared.domain.value_objects.session_id import SessionId
+from agent_engine.execution.domain.enums import ModelTier
 
 
 class ExecutionTriggerPort(ABC):
@@ -13,4 +14,5 @@ class ExecutionTriggerPort(ABC):
         system_prompt: str,
         requirement: str | None = None,
         context_payload: dict | None = None,
+        model_tier: ModelTier | None = None,
     ) -> SessionId: ...

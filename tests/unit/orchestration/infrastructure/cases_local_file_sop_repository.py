@@ -21,12 +21,12 @@ TEST_CASES_GET_SOP: list[GetSopCase] = [
         mocks_setup=_setup_mocks_success,
         planning_level="story",
         status="ready",
-        expected=lambda result: "Name: story_planner" in result and "Decomposition & Planning" in result and "规划流程与执行指南" in result
+        expected=lambda result: "Name: story_planner" in result.system_prompt and "Decomposition & Planning" in result.system_prompt and "规划流程与执行指南" in result.system_prompt
     ),
     GetSopCase(
         mocks_setup=_setup_mocks_success,
         planning_level="architecture",
         status="review",
-        expected=lambda result: "Name: architecture_reviewer" in result and "审查 T1 架构决策文档" in result and "🧭 执行指引 (Guidance)" in result
+        expected=lambda result: "Name: architecture_reviewer" in result.system_prompt and "审查 T1 架构决策文档" in result.system_prompt and "🧭 执行指引 (Guidance)" in result.system_prompt
     )
 ]

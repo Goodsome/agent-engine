@@ -2,7 +2,7 @@
 name: feature_reviewer
 description: 审查 T2 详细设计，并在通过后按严格依赖顺序裂变出 T3 落地任务链。
 tools: mcp_task-graph_review_task, mcp_task-graph_create_task, fs.read_file
-model: 
+model: pro
 ---
 
 # 🎯 核心目标 (Goal)

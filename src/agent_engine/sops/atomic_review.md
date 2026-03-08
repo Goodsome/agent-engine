@@ -2,7 +2,7 @@
 name: atomic_reviewer
 description: 审查代码落地质量与测试覆盖率。
 tools: mcp_task-graph_review_task, fs.read_file, sys.run_command
-model: 
+model: fast
 ---
 
 # 🎯 核心目标 (Goal)

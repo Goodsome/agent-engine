@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import agent_engine
 from agent_engine.orchestration.domain.ports.sop_repository import SopRepository
+from agent_engine.orchestration.domain.value_objects.sop_content import SopContent
+from agent_engine.execution.domain.enums import ModelTier
 
 
 @dataclass
@@ -12,7 +14,7 @@ class LocalFileSopRepository(SopRepository):
 
     base_dir: str = field(default_factory=lambda: str(Path(agent_engine.__file__).parent / "sops"))
 
-    async def get_sop(self, planning_level: str, status: str) -> str:
+    async def get_sop(self, planning_level: str, status: str) -> SopContent:
         # Ensure values are used if they are Enums
         pl = getattr(planning_level, "value", planning_level)
         st = getattr(status, "value", status)
@@ -26,7 +28,22 @@ class LocalFileSopRepository(SopRepository):
             )
 
         post = frontmatter.load(file_path)
-        return self._build_system_prompt(post.metadata, post.content)
+        system_prompt = self._build_system_prompt(post.metadata, post.content)
+        
+        # Parse model tier from frontmatter
+        raw_model = post.metadata.get("model")
+        model_tier = None
+        if raw_model:
+            try:
+                model_tier = ModelTier(raw_model.lower())
+            except ValueError:
+                # Fallback to PRO if unknown
+                model_tier = ModelTier.PRO
+
+        return SopContent(
+            system_prompt=system_prompt,
+            model_tier=model_tier
+        )
 
     @staticmethod
     def _build_system_prompt(metadata: dict, content: str) -> str:
