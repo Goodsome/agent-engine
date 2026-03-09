@@ -10,16 +10,85 @@ contexts:
       attributes:
       - type: uuid
         name: value
+      behaviors:
+      - name: create
+        output:
+          type: any
+      - name: reconstitute
+        inputs:
+        - type: Any
+          custom_type_string: Union[UUID, str]
+          name: value
+        output:
+          type: any
+      - name: __str__
+        output:
+          type: any
+      - name: serialize
+        output:
+          type: string
+      - name: validate_from_primitive
+        inputs:
+        - type: any
+          name: data
+        output:
+          type: any
     - name: JobId
       description: 调度派发任务的唯一标识
       attributes:
       - type: uuid
         name: value
+      behaviors:
+      - name: create
+        output:
+          type: any
+      - name: reconstitute
+        inputs:
+        - type: Any
+          custom_type_string: Union[UUID, str]
+          name: value
+        output:
+          type: any
+      - name: __str__
+        output:
+          type: any
+      - name: serialize
+        output:
+          type: string
+      - name: validate_from_primitive
+        inputs:
+        - type: any
+          name: data
+        output:
+          type: any
     - name: TaskId
       description: 关联到远端 TaskGraph 的任务标识
       attributes:
       - type: uuid
         name: value
+      behaviors:
+      - name: create
+        output:
+          type: any
+      - name: reconstitute
+        inputs:
+        - type: Any
+          custom_type_string: Union[UUID, str]
+          name: value
+        output:
+          type: any
+      - name: __str__
+        output:
+          type: any
+      - name: serialize
+        output:
+          type: string
+      - name: validate_from_primitive
+        inputs:
+        - type: any
+          name: data
+        output:
+          type: any
 - name: Execution
   domain:
     aggregates:
@@ -30,11 +99,6 @@ contexts:
         name: id
       - type: JobId
         name: job_id
-      - type: TaskId
-        optional: true
-        name: task_id
-      - type: SessionType
-        name: session_type
       - type: dict
         name: context_payload
       - type: SessionStatus
@@ -62,13 +126,6 @@ contexts:
         output:
           type: None
     enums:
-    - name: SessionType
-      description: 执行会话类型
-      members:
-      - name: PLANNER
-        value: planner
-      - name: EXECUTOR
-        value: executor
     - name: SessionStatus
       members:
       - name: IDLE
@@ -79,9 +136,16 @@ contexts:
         value: success
       - name: ERROR
         value: error
+    - name: ModelTier
+      description: 模型能力档位定义
+      members:
+      - name: PRO
+        value: pro
+      - name: FAST
+        value: fast
     ports:
     - name: AgentGateway
-      description: Agent 底层调用网关 (封装 claude-agent-sdk)
+      description: Agent 底层调用网关
       kind: adapter
       operations:
       - name: run
@@ -93,17 +157,10 @@ contexts:
         - type: string
           container: list
           name: tools
-        output:
-          type: string
-    - name: SopRepository
-      description: SOP 仓储，根据 SessionType 加载不同的操作规程
-      kind: repository
-      aggregate: Sop
-      operations:
-      - name: get_sop
-        inputs:
-        - type: SessionType
-          name: session_type
+        - type: ModelTier
+          optional: true
+          name: model_tier
+          default: None
         output:
           type: string
     - name: AgentSessionRepository
@@ -136,22 +193,24 @@ contexts:
       dependencies:
       - type: AgentGateway
         name: agent_gateway
-      - type: SopRepository
-        name: sop_repo
       - type: AgentSessionRepository
         name: session_repo
       command:
         attributes:
         - type: JobId
           name: job_id
-        - type: TaskId
-          optional: true
-          name: task_id
+        - type: string
+          name: system_prompt
         - type: string
           optional: true
           name: requirement
-        - type: SessionType
-          name: session_type
+        - type: any
+          container: map
+          optional: true
+          name: context_payload
+        - type: ModelTier
+          optional: true
+          name: model_tier
       result:
         attributes:
         - type: SessionId
@@ -163,22 +222,36 @@ contexts:
           name: output
   infrastructure:
     implementations:
+    - name: SqlAlchemySessionRepository
+      implements: AgentSessionRepository
+      technology: sql
+      description: 使用 PostgreSQL 持久化 Agent 会话日志和状态
+      attributes:
+      - type: Any
+        custom_type_string: async_sessionmaker[AsyncSession]
+        name: session_factory
     - name: ClaudeAgentGateway
       implements: AgentGateway
       technology: claude
       description: 封装对 Claude Agent SDK 的调用，将工具和 Prompt 注入并执行
+    - name: AgentGatewayRouter
+      implements: AgentGateway
+      technology: agent
+      description: '根据默认提供商将请求路由到具体的网关。
+
+        具体的网关实现负责将 ModelTier 映射到它们支持的具体模型名称。'
+      attributes:
+      - type: AgentGateway
+        name: claude_gateway
+      - type: AgentGateway
+        name: gemini_gateway
+      - type: string
+        name: default_provider
+        default: '''gemini'''
     - name: GeminiAgentGateway
       implements: AgentGateway
       technology: gemini
       description: 封装对 Gemini Cli 的调用，将工具和 Prompt 注入并执行
-    - name: SqlAlchemySessionRepository
-      implements: AgentSessionRepository
-      technology: sql
-      description: 使用 PostgreSQL/SQLite 持久化 Agent 会话日志和状态
-    - name: LocalFileSopRepository
-      implements: SopRepository
-      technology: local
-      description: 从本地文件系统（如 docs/ 或 sops/ 目录）读取 Markdown 格式的 SOP 提示词
 - name: Orchestration
   domain:
     aggregates:
@@ -222,6 +295,48 @@ contexts:
         value: completed
       - name: FAILED
         value: failed
+    - name: TaskStatus
+      description: The lifecycle state of a task.
+      members:
+      - name: PENDING
+        value: pending
+      - name: BLOCKED
+        value: blocked
+      - name: READY
+        value: ready
+      - name: IN_PROGRESS
+        value: in_progress
+      - name: REVIEW
+        value: review
+      - name: DONE
+        value: done
+      - name: CHANGES_REQUESTED
+        value: changes_requested
+      - name: SKIPPED
+        value: skipped
+      - name: DISCARDED
+        value: discarded
+    - name: PlanningLevel
+      description: Defines the uncertainty and granularity of the task.
+      members:
+      - name: INITIATIVE
+        value: initiative
+      - name: MILESTONE
+        value: milestone
+      - name: ARCHITECTURAL
+        value: architectural
+      - name: FEATURE
+        value: feature
+      - name: ATOMIC
+        value: atomic
+    - name: RecurrenceType
+      members:
+      - name: ON_SUCCESS
+        value: on_success
+      - name: CRON
+        value: cron
+      - name: ON_FAILURE
+        value: on_failure
     value_objects:
     - name: ReadyTaskDTO
       description: 防腐层数据契约：从 TaskGraph 读取的、随时可被派发的任务快照
@@ -231,11 +346,29 @@ contexts:
       - type: string
         name: planning_level
       - type: string
-        name: name
+        name: status
       - type: string
+        name: name
+    - name: SopContent
+      attributes:
+      - type: string
+        name: system_prompt
+      - type: ModelTier
         optional: true
-        name: intent
+        name: model_tier
+        default: None
     ports:
+    - name: DomainEventListenerPort
+      description: 端口：领域事件监听器，以异步迭代器形式持续产出事件
+      kind: adapter
+      operations:
+      - name: listen
+        output:
+          type: Any
+          custom_type_string: AsyncIterator[DispatchableTaskEvent]
+      - name: close
+        output:
+          type: None
     - name: DispatchJobRepository
       kind: repository
       aggregate: DispatchJob
@@ -267,16 +400,35 @@ contexts:
         inputs:
         - type: JobId
           name: job_id
-        - type: TaskId
-          optional: true
-          name: task_id
-          default: None
+        - type: string
+          name: system_prompt
         - type: string
           optional: true
           name: requirement
           default: None
+        - type: dict
+          optional: true
+          name: context_payload
+          default: None
+        - type: ModelTier
+          optional: true
+          name: model_tier
+          default: None
         output:
           type: SessionId
+    - name: SopRepository
+      description: SOP 仓储，根据 planning_level 和 status 加载对应的操作规程
+      kind: repository
+      aggregate: Sop
+      operations:
+      - name: get_sop
+        inputs:
+        - type: string
+          name: planning_level
+        - type: string
+          name: status
+        output:
+          type: SopContent
     - name: TaskGraphQueryPort
       description: 防腐层：读取 TaskGraph 状态的只读接口，未来可替换为事件订阅(Pub/Sub)客户端。
       kind: adapter
@@ -287,6 +439,21 @@ contexts:
           container: list
   application:
     use_cases:
+    - name: HandleDispatchableTaskEvent
+      kind: command
+      dependencies:
+      - type: DispatchJobRepository
+        name: job_repo
+      - type: ExecutionTriggerPort
+        name: execution_trigger
+      - type: SopRepository
+        name: sop_repo
+      result:
+        attributes:
+        - type: string
+          name: job_id
+        - type: string
+          name: session_id
     - name: StartInitialWorkflow
       kind: command
       dependencies:
@@ -294,6 +461,10 @@ contexts:
         name: job_repo
       - type: ExecutionTriggerPort
         name: execution_trigger
+      - type: SopRepository
+        name: sop_repo
+      - type: string
+        name: project_id
       command:
         attributes:
         - type: string
@@ -311,21 +482,53 @@ contexts:
         name: job_repo
       - type: ExecutionTriggerPort
         name: execution_trigger
+      - type: SopRepository
+        name: sop_repo
       result:
         attributes:
         - type: integer
           name: dispatched_count
   infrastructure:
     implementations:
+    - name: SqlAlchemyDispatchJobRepository
+      implements: DispatchJobRepository
+      technology: sql
+      description: 使用 PostgreSQL 持久化 Job 记录
+      attributes:
+      - type: Any
+        custom_type_string: async_sessionmaker[AsyncSession]
+        name: session_factory
     - name: InProcessExecutionTrigger
       implements: ExecutionTriggerPort
       technology: in
       description: 进程内直接调用 Execution 域的应用层服务 (UseCase) 触发任务
+      attributes:
+      - type: ExecuteAgentSession
+        name: execute_agent_session
     - name: TaskGraphAdapter
       implements: TaskGraphQueryPort
       technology: task
       description: 通过 TaskGraph 服务获取 Ready 任务
-    - name: SqlAlchemyDispatchJobRepository
-      implements: DispatchJobRepository
-      technology: sql
-      description: 使用 PostgreSQL/SQLite 持久化 Job 记录
+    - name: PgNotifyEventListener
+      implements: DomainEventListenerPort
+      technology: pg
+      description: 基于 PostgreSQL LISTEN/NOTIFY 的领域事件监听实现
+    - name: LocalFileSopRepository
+      implements: SopRepository
+      technology: local
+      description: 从本地文件系统（sops/ 目录）读取带有 Frontmatter 的 Markdown 格式 SOP，并整理为 system_prompt
+      attributes:
+      - type: string
+        optional: true
+        name: base_dir
+      private_methods:
+      - name: _build_system_prompt
+        inputs:
+        - type: dict
+          name: metadata
+        - type: string
+          name: content
+        output:
+          type: string
+- name: Entrypoints
+- name: Sops
