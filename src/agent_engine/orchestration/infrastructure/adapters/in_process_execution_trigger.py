@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 from agent_engine.orchestration.domain.ports.execution_trigger_port import (
     ExecutionTriggerPort,
+    TriggerSessionResult,
 )
 from agent_engine.execution.domain.enums import ModelTier
 from agent_engine.execution.application.use_cases.execute_agent_session import (
@@ -25,7 +26,7 @@ class InProcessExecutionTrigger(ExecutionTriggerPort):
         requirement: str | None = None,
         context_payload: dict[str, Any] | None = None,
         model_tier: ModelTier | None = None,
-    ) -> SessionId:
+    ) -> TriggerSessionResult:
         cmd = ExecuteAgentSessionCommand(
             job_id=job_id,
             system_prompt=system_prompt,
@@ -34,4 +35,8 @@ class InProcessExecutionTrigger(ExecutionTriggerPort):
             model_tier=model_tier,
         )
         result = await self.execute_agent_session.execute(cmd)
-        return result.session_id
+        return TriggerSessionResult(
+            session_id=result.session_id,
+            output=result.output,
+            is_success=result.is_success,
+        )

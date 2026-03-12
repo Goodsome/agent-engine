@@ -43,7 +43,7 @@ class HandleDispatchableTaskEvent:
             status=event.status,
         )
 
-        session_id = await self.execution_trigger.trigger_session(
+        result = await self.execution_trigger.trigger_session(
             job_id=job.id,
             system_prompt=sop_content.system_prompt,
             model_tier=sop_content.model_tier,
@@ -51,10 +51,10 @@ class HandleDispatchableTaskEvent:
             context_payload={"task_id": str(event.task_id.value), "status": event.status.value},
         )
 
-        job.mark_running(session_id=session_id)
+        job.mark_running(session_id=result.session_id)
         await self.job_repo.save(job=job)
 
         return HandleDispatchableTaskEventResult(
             job_id=str(job.id.value),
-            session_id=str(session_id.value),
+            session_id=str(result.session_id.value),
         )

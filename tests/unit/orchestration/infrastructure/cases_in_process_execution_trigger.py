@@ -3,6 +3,7 @@ import uuid
 from agent_engine.shared.domain.value_objects.job_id import JobId
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.execution.application.use_cases.execute_agent_session import ExecuteAgentSessionResult
+from agent_engine.orchestration.domain.ports.execution_trigger_port import TriggerSessionResult
 
 class TriggerSessionCase(NamedTuple):
     mocks_setup: Callable
@@ -24,6 +25,10 @@ TEST_CASES_TRIGGER_SESSION: list[TriggerSessionCase] = [
         job_id=JobId(value=uuid.UUID("22222222-2222-2222-2222-222222222222")),
         system_prompt="You are a helpful planner",
         requirement="Hello",
-        expected=SessionId(value=uuid.UUID("33333333-3333-3333-3333-333333333333"))
+        expected=TriggerSessionResult(
+            session_id=SessionId(value=uuid.UUID("33333333-3333-3333-3333-333333333333")),
+            output=None,
+            is_success=True,
+        )
     )
 ]

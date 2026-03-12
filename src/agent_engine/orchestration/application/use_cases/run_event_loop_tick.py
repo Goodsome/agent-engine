@@ -49,7 +49,7 @@ class RunEventLoopTick:
                 status=task.status,
             )
 
-            session_id = await self.execution_trigger.trigger_session(
+            result = await self.execution_trigger.trigger_session(
                 job_id=job.id,
                 system_prompt=sop_content.system_prompt,
                 model_tier=sop_content.model_tier,
@@ -57,7 +57,7 @@ class RunEventLoopTick:
                 context_payload={"task_id": str(task.task_id.value)},
             )
 
-            job.mark_running(session_id=session_id)
+            job.mark_running(session_id=result.session_id)
             await self.job_repo.save(job=job)
             dispatched_count += 1
 
