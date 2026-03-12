@@ -3,6 +3,7 @@ from dependency_injector import containers, providers
 from agent_engine.config import get_settings
 from agent_engine.execution.container import Container as ExecutionContainer
 from agent_engine.orchestration.container import Container as OrchestrationContainer
+from agent_engine.integration.container import Container as IntegrationContainer
 from agent_engine.shared.infrastructure.database import (
     create_db_engine,
     create_session_factory,
@@ -42,6 +43,14 @@ class ApplicationContainer(containers.DeclarativeContainer):
         config=config,
         session_factory=session_factory,
         execute_agent_session=execution_container.execute_agent_session,
+    )
+
+    # 组装 Integration 限界上下文容器
+    integration_container = providers.Container(
+        IntegrationContainer,
+        config=config,
+        session_factory=session_factory,
+        execution_trigger=orchestration_container.in_process_execution_trigger,
     )
 
 

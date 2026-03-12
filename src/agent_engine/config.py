@@ -54,6 +54,17 @@ class Settings(BaseSettings):
         description="Root directory of the project"
     )
 
+    # Feishu (Lark) Integration Configuration
+    FEISHU_APP_ID: str | None = Field(
+        default=None,
+        description="Feishu App ID for bot integration"
+    )
+
+    FEISHU_APP_SECRET: str | None = Field(
+        default=None,
+        description="Feishu App Secret for bot integration"
+    )
+
     model_config = SettingsConfigDict(
         # Load global first, then allow local .env to override
         env_file=(GLOBAL_ENV_FILE, LOCAL_ENV_FILE),
