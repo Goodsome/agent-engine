@@ -25,7 +25,7 @@ class ClaudeAgentGateway(AgentGateway):
             prompt=prompt,
             options=ClaudeAgentOptions(
                 allowed_tools=allowed_tools,
-                permission_mode="acceptEdits",
+                permission_mode="bypassPermissions",
                 model=model,
             )
         ):
