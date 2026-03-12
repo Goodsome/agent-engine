@@ -163,6 +163,23 @@ contexts:
           default: None
         output:
           type: string
+      - name: run_stream
+        description: 流式执行 Agent 并返回文本块迭代器
+        inputs:
+        - type: string
+          name: system_prompt
+        - type: string
+          name: user_prompt
+        - type: string
+          container: list
+          name: tools
+        - type: ModelTier
+          optional: true
+          name: model_tier
+          default: None
+        output:
+          type: Any
+          custom_type_string: AsyncIterator[str]
     - name: AgentSessionRepository
       kind: repository
       aggregate: AgentSession
@@ -532,3 +549,187 @@ contexts:
           type: string
 - name: Entrypoints
 - name: Sops
+- name: Integration
+  domain:
+    enums:
+    - name: ChatType
+      description: 飞书聊天类型
+      members:
+      - name: P2P
+        value: p2p
+      - name: GROUP
+        value: group
+    value_objects:
+    - name: FeishuMessageId
+      description: 飞书消息唯一标识
+      attributes:
+      - type: string
+        name: value
+      behaviors:
+      - name: create
+        output:
+          type: any
+      - name: reconstitute
+        inputs:
+        - type: string
+          name: value
+        output:
+          type: any
+      - name: __str__
+        output:
+          type: any
+      - name: serialize
+        output:
+          type: string
+    - name: ChatId
+      description: 飞书会话唯一标识
+      attributes:
+      - type: string
+        name: value
+      behaviors:
+      - name: create
+        output:
+          type: any
+      - name: reconstitute
+        inputs:
+        - type: string
+          name: value
+        output:
+          type: any
+      - name: __str__
+        output:
+          type: any
+      - name: serialize
+        output:
+          type: string
+    - name: FeishuMessagePayload
+      description: 飞书消息负载 - 防腐层数据契约
+      attributes:
+      - type: FeishuMessageId
+        name: message_id
+      - type: ChatId
+        name: chat_id
+      - type: ChatType
+        name: chat_type
+      - type: string
+        name: content
+      - type: string
+        name: sender_id
+    aggregates:
+    - name: ConversationContext
+      description: 聚合根 - 飞书会话的对话上下文，用于多轮对话记忆
+      attributes:
+      - type: ChatId
+        name: chat_id
+      - type: list
+        custom_type_string: list[dict]
+        name: messages
+      - type: SessionId
+        optional: true
+        name: current_session_id
+      behaviors:
+      - name: add_message
+        inputs:
+        - type: string
+          name: role
+        - type: string
+          name: content
+        output:
+          type: None
+      - name: set_session
+        inputs:
+        - type: SessionId
+          name: session_id
+        output:
+          type: None
+    ports:
+    - name: FeishuClientPort
+      description: 飞书客户端端口 - 处理WebSocket连接和API调用
+      kind: adapter
+      operations:
+      - name: send_message
+        inputs:
+        - type: ChatId
+          name: chat_id
+        - type: string
+          name: content
+        output:
+          type: FeishuMessageId
+      - name: reply_message
+        inputs:
+        - type: FeishuMessageId
+          name: message_id
+        - type: string
+          name: content
+        output:
+          type: FeishuMessageId
+      - name: update_message
+        inputs:
+        - type: FeishuMessageId
+          name: message_id
+        - type: string
+          name: content
+        output:
+          type: None
+      - name: start_listener
+        output:
+          type: None
+    - name: ConversationContextRepository
+      description: 会话上下文仓储 - 持久化聊天对话历史
+      kind: repository
+      aggregate: ConversationContext
+      operations:
+      - name: save
+        inputs:
+        - type: ConversationContext
+          name: context
+        output:
+          type: None
+      - name: find_by_chat_id
+        inputs:
+        - type: ChatId
+          name: chat_id
+        output:
+          type: ConversationContext
+          optional: true
+  application:
+    use_cases:
+    - name: HandleFeishuMessage
+      kind: command
+      description: 处理飞书消息 - 非流式响应
+      dependencies:
+      - type: FeishuClientPort
+        name: feishu_client
+      - type: ExecutionTriggerPort
+        name: execution_trigger
+      - type: ConversationContextRepository
+        name: context_repo
+      command:
+        attributes:
+        - type: FeishuMessagePayload
+          name: payload
+      result:
+        attributes:
+        - type: FeishuMessageId
+          name: reply_message_id
+        - type: SessionId
+          name: session_id
+  infrastructure:
+    implementations:
+    - name: LarkWsClient
+      implements: FeishuClientPort
+      technology: lark
+      description: 基于 lark-oapi SDK 的 WebSocket 客户端实现
+      attributes:
+      - type: string
+        name: app_id
+      - type: string
+        name: app_secret
+    - name: SqlAlchemyConversationContextRepository
+      implements: ConversationContextRepository
+      technology: sql
+      description: 使用 PostgreSQL 持久化会话上下文
+      attributes:
+      - type: Any
+        custom_type_string: async_sessionmaker[AsyncSession]
+        name: session_factory
