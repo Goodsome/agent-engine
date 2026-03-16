@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Agent Engine is a Domain-Driven Design (DDD) based agent orchestration system that manages AI agent sessions and task dispatching. It supports multiple AI providers (Claude, Gemini) and uses PostgreSQL for persistence and event-driven communication.
+Agent Engine is a Domain-Driven Design (DDD) based agent orchestration system that manages AI agent sessions and task dispatching. It uses Claude as the AI provider and PostgreSQL for persistence and event-driven communication.
 
 ## Development Commands
 
@@ -49,8 +49,7 @@ The system follows DDD with two bounded contexts, each with its own container:
 - Key use cases: `HandleDispatchableTaskEvent`, `StartInitialWorkflow`, `RunEventLoopTick`
 
 **2. Execution Context** (`src/agent_engine/execution/`)
-- Manages AI agent sessions and gateway routing
-- Supports Claude and Gemini providers via `AgentGatewayRouter`
+- Manages AI agent sessions via `ClaudeAgentGateway`
 - Key aggregates: `AgentSession`
 - Key use case: `ExecuteAgentSession`
 
@@ -88,7 +87,7 @@ The project uses a `codegen.yaml` blueprint for DDD code generation:
 Configuration via environment variables (loaded from `~/.agent-engine/.env` or local `.env`):
 - `DATABASE_URL` - PostgreSQL connection string for agent engine
 - `TASK_GRAPH_DATABASE_URL` - PostgreSQL connection string for task graph
-- `AGENT_PROVIDER` - Default provider (`claude` or `gemini`, default: `gemini`)
+- `AGENT_PROVIDER` - Provider setting (default: `claude`)
 - `EVENT_BUS_CHANNEL` - PostgreSQL NOTIFY channel (default: `domain_events`)
 - `PROJECT_ID` - Current project identifier
 - `PROJECT_ROOT` - Root directory of the project
@@ -98,7 +97,7 @@ Configuration via environment variables (loaded from `~/.agent-engine/.env` or l
 ### Port/Adapter Pattern
 - Ports define interfaces in `domain/ports/`
 - Adapters implement interfaces in `infrastructure/adapters/`
-- Example: `AgentGateway` (port) → `ClaudeAgentGateway`, `GeminiAgentGateway` (adapters)
+- Example: `AgentGateway` (port) → `ClaudeAgentGateway` (adapter)
 
 ### Repository Pattern
 - Repository interfaces in `domain/ports/`

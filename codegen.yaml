@@ -251,24 +251,6 @@ contexts:
       implements: AgentGateway
       technology: claude
       description: 封装对 Claude Agent SDK 的调用，将工具和 Prompt 注入并执行
-    - name: AgentGatewayRouter
-      implements: AgentGateway
-      technology: agent
-      description: '根据默认提供商将请求路由到具体的网关。
-
-        具体的网关实现负责将 ModelTier 映射到它们支持的具体模型名称。'
-      attributes:
-      - type: AgentGateway
-        name: claude_gateway
-      - type: AgentGateway
-        name: gemini_gateway
-      - type: string
-        name: default_provider
-        default: '''gemini'''
-    - name: GeminiAgentGateway
-      implements: AgentGateway
-      technology: gemini
-      description: 封装对 Gemini Cli 的调用，将工具和 Prompt 注入并执行
 - name: Orchestration
   domain:
     aggregates:

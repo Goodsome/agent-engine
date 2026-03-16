@@ -25,7 +25,7 @@ TEST_CASES_GET_SOP: list[GetSopCase] = [
     ),
     GetSopCase(
         mocks_setup=_setup_mocks_success,
-        planning_level="architecture",
+        planning_level="architectural",
         status="review",
         expected=lambda result: "Name: architecture_reviewer" in result.system_prompt and "审查 T1 架构决策文档" in result.system_prompt and "🧭 执行指引 (Guidance)" in result.system_prompt
     )

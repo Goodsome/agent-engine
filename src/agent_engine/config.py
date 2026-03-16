@@ -27,8 +27,8 @@ class Settings(BaseSettings):
 
     # Agent Configuration
     AGENT_PROVIDER: str = Field(
-        default="gemini",
-        description="The agent provider to use (claude or gemini)"
+        default="claude",
+        description="The agent provider to use (claude)"
     )
 
     # Logging Configuration
