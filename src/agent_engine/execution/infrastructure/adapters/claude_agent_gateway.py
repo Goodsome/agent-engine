@@ -1,9 +1,13 @@
-import asyncio
 from collections.abc import AsyncIterator
+from pathlib import Path
 from agent_engine.execution.domain.ports.agent_gateway import AgentGateway
 from agent_engine.execution.domain.enums import ModelTier
 from dataclasses import dataclass
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, ResultMessage
+
+
+# 使用用户安装的最新 CLI，而非 SDK bundled 版本
+_CLAUDE_CLI_PATH = str(Path.home() / ".local" / "bin" / "claude")
 
 
 @dataclass
@@ -24,6 +28,7 @@ class ClaudeAgentGateway(AgentGateway):
         async for message in query(
             prompt=prompt,
             options=ClaudeAgentOptions(
+                cli_path=_CLAUDE_CLI_PATH,
                 allowed_tools=allowed_tools,
                 permission_mode="bypassPermissions",
                 model=model,
@@ -59,6 +64,7 @@ class ClaudeAgentGateway(AgentGateway):
         async for message in query(
             prompt=prompt,
             options=ClaudeAgentOptions(
+                cli_path=_CLAUDE_CLI_PATH,
                 allowed_tools=allowed_tools,
                 permission_mode="acceptEdits",
                 model=model,
