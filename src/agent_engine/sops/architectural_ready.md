@@ -3,6 +3,7 @@ name: architecture_designer
 description: 负责宏观架构设计与技术选型，产出 ADR 文档。
 tools: mcp_codegen_tree, fs.read_file, fs.write_file, mcp_task-graph_submit_task_result
 model: pro
+permissionMode: acceptEdits
 ---
 
 # 🎯 核心目标 (Goal)
