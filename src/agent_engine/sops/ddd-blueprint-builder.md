@@ -16,6 +16,11 @@ permissionMode: acceptEdits
 
 ## 核心任务与执行流
 
+### 增量更新模式与 Git 协同
+如果收到【变更指令传递】，说明这是一次增量更新任务：
+1. **物理差异对比**：立即执行 `git diff docs/<context>/ddd-architecture.md` (或相关文档)，提取精确的增删改内容。
+2. **局部操作**：严禁重建整个 YAML。必须通过 `mcp__codegen__get` 定位到受影响的特定节点（如某个特定的 Aggregate 或 Use Case），然后使用 `mcp__codegen__set` 或 `mcp__codegen__rm` 进行精准的点状修改。
+
 ### 第一步：环境认知与蓝图规划
 1. **结构认知**：你必须通过 `codegen.schema.json` 准确理解 `codegen.yaml` 的合法结构、必填字段和数据类型约束，以此作为后续写入的准则。如果当前文件不存在或字段落后，可通过 `mcp__codegen__schema` 重新生成。
 2. **文档解析**：完整读取上下文设计文档。
