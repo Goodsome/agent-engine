@@ -1,6 +1,7 @@
 import asyncio
 import json
 import uuid
+import traceback
 
 import typer
 from rich.console import Console
@@ -40,11 +41,16 @@ def execute_session(
         requirement=requirement,
         context_payload=payload,
     )
-    
+
     console.print(f"Executing session with system prompt: [green]{system_prompt}[/green]")
-    
-    result = _do_execute_session(cmd)
-    
+
+    try:
+        result = _do_execute_session(cmd)
+    except Exception as e:
+        console.print("[bold red]Fatal error in execute_session:[/bold red]")
+        console.print(traceback.format_exc())
+        raise typer.Exit(code=1)
+
     if result.is_success:
         console.print(f"[bold green]Success![/bold green] Session ID: {result.session_id.value}")
         console.print(f"Output: {result.output}")

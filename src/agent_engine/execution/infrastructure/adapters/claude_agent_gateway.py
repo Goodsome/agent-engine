@@ -2,8 +2,9 @@ from collections.abc import AsyncIterator
 from pathlib import Path
 from agent_engine.execution.domain.ports.agent_gateway import AgentGateway
 from agent_engine.execution.domain.enums import ModelTier
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, ResultMessage
+from claude_agent_sdk._errors import ProcessError
 
 
 # 使用用户安装的最新 CLI，而非 SDK bundled 版本
@@ -13,6 +14,12 @@ _CLAUDE_CLI_PATH = str(Path.home() / ".local" / "bin" / "claude")
 @dataclass
 class ClaudeAgentGateway(AgentGateway):
     """封装对 Claude Agent SDK 的调用，将工具和 Prompt 注入并执行"""
+
+    _stderr_output: list[str] = field(default_factory=list)
+
+    def _stderr_callback(self, line: str) -> None:
+        """Capture stderr output for error reporting."""
+        self._stderr_output.append(line)
 
     async def run(self, system_prompt: str, user_prompt: str, tools: list[str], model_tier: ModelTier | None = None) -> str:
         prompt = f"{system_prompt}\n---\n{user_prompt}"
@@ -24,22 +31,35 @@ class ClaudeAgentGateway(AgentGateway):
         elif model_tier == ModelTier.FAST:
             model = "sonnet"
 
-        output_text = []
-        async for message in query(
-            prompt=prompt,
-            options=ClaudeAgentOptions(
-                cli_path=_CLAUDE_CLI_PATH,
-                allowed_tools=allowed_tools,
-                permission_mode="bypassPermissions",
-                model=model,
-            )
-        ):
-            if isinstance(message, AssistantMessage):
-                for block in message.content:
-                    if hasattr(block, "text"):
-                        output_text.append(block.text)
-            # Ignore ResultMessage for now, as we just want the text output
-        return "\n".join(output_text)
+        self._stderr_output.clear()
+
+        try:
+            output_text = []
+            async for message in query(
+                prompt=prompt,
+                options=ClaudeAgentOptions(
+                    # cli_path=_CLAUDE_CLI_PATH,
+                    allowed_tools=allowed_tools,
+                    permission_mode="bypassPermissions",
+                    model=model,
+                    stderr=self._stderr_callback,
+                )
+            ):
+                if isinstance(message, AssistantMessage):
+                    for block in message.content:
+                        if hasattr(block, "text"):
+                            output_text.append(block.text)
+                # Ignore ResultMessage for now, as we just want the text output
+            return "\n".join(output_text)
+        except ProcessError as e:
+            # Enhance the error message with captured stderr
+            if self._stderr_output:
+                captured_stderr = "\n".join(self._stderr_output)
+                if e.stderr == "Check stderr output for details":
+                    e.stderr = captured_stderr
+                else:
+                    e.stderr = f"{e.stderr}\n{captured_stderr}"
+            raise
 
     async def run_stream(
         self,
