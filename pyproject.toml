@@ -23,8 +23,10 @@ packages = ["src/agent_engine"]
 
 [dependency-groups]
 dev = [
+    "basedpyright>=1.39.0",
     "pytest>=9.0.2",
     "pytest-asyncio>=1.3.0",
+    "ruff>=0.15.10",
 ]
 
 [build-system]

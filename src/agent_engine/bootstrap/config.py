@@ -1,26 +1,29 @@
-from pathlib import Path
-import os
-
-from pydantic import PostgresDsn, Field
+"""
+Bootstrap configuration for the entire application.
+Loads project-level settings and merges context configurations.
+"""
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
 
 # Set up global configuration path for CLI usage across different projects
 GLOBAL_CONFIG_DIR = Path.home() / ".agent-engine"
 GLOBAL_ENV_FILE = GLOBAL_CONFIG_DIR / ".env"
 LOCAL_ENV_FILE = Path.cwd() / ".env"
 
-class Settings(BaseSettings):
+
+class AppConfig(BaseSettings):
     """
-    Application settings using pydantic-settings.
-    Loads configuration from environment variables and .env files.
+    Top-level application configuration.
+    包含了 Project 级别的全局配置，并聚合了所有上下文的配置。
     """
     # Database Configuration
-    DATABASE_URL: PostgresDsn | None = Field(
+    DATABASE_URL: str | None = Field(
         default=None,
         description="PostgreSQL Database Connection String"
     )
-    
-    TASK_GRAPH_DATABASE_URL: PostgresDsn | None = Field(
+
+    TASK_GRAPH_DATABASE_URL: str | None = Field(
         default=None,
         description="PostgreSQL Task Graph Database Connection String"
     )
@@ -42,7 +45,7 @@ class Settings(BaseSettings):
         default="domain_events",
         description="PostgreSQL NOTIFY channel for domain events"
     )
-    
+
     # General Configuration
     PROJECT_ID: str = Field(
         default="default",
@@ -73,11 +76,10 @@ class Settings(BaseSettings):
         extra="ignore"  # Ignore unexpected environment variables
     )
 
-_settings: Settings | None = None
 
-def get_settings() -> Settings:
-    """Singleton getter for settings."""
-    global _settings
-    if _settings is None:
-        _settings = Settings()
-    return _settings
+def load_all_configurations() -> AppConfig:
+    """实例化全局配置（会自动触发各级环境变量的读取）"""
+    return AppConfig()
+
+
+__all__ = ["AppConfig", "load_all_configurations"]
