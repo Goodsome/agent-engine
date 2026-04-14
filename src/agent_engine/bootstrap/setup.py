@@ -2,13 +2,12 @@
 应用程序启动工厂：负责配置加载、容器实例化和资源初始化。
 遵循组合根模式：在程序入口点一次性完成所有组装工作。
 """
-from typing import Optional
 from .container import ApplicationContainer
 from .config import load_all_configurations, AppConfig
 
 
 def create_container(
-    config_override: Optional[AppConfig] = None,
+    config_override: AppConfig | None = None,
     init_resources: bool = True
 ) -> ApplicationContainer:
     """
