@@ -17,24 +17,24 @@ from agent_engine.orchestration.interfaces.event_listener import EventListenerRu
 console = Console()
 
 @inject
-def _do_tick(
+async def _do_tick(
     run_tick_use_case: RunEventLoopTick = Provide["orchestration_container.run_event_loop_tick"],
 ):
     cmd = RunEventLoopTickCommand()
-    return asyncio.run(run_tick_use_case.execute(cmd))
+    return await run_tick_use_case.execute(cmd)
 
 def tick():
     """Run a single tick of the event loop."""
     console.print("Running event loop tick...")
-    result = _do_tick()
+    result = asyncio.run(_do_tick())
     console.print(f"Tick completed. Dispatched [bold green]{result.dispatched_count}[/bold green] jobs.")
 
 @inject
-def _do_start_workflow(
+async def _do_start_workflow(
     cmd: StartInitialWorkflowCommand,
     start_workflow_use_case: StartInitialWorkflow = Provide["orchestration_container.start_initial_workflow"],
 ):
-    return asyncio.run(start_workflow_use_case.execute(cmd))
+    return await start_workflow_use_case.execute(cmd)
 
 def start_workflow(
     requirement: str = typer.Argument(..., help="The raw requirement to start the workflow"),
@@ -42,16 +42,16 @@ def start_workflow(
     """Start an initial workflow with a requirement."""
     console.print(f"Starting workflow with requirement: [green]{requirement}[/green]")
     cmd = StartInitialWorkflowCommand(raw_requirement=requirement)
-    result = _do_start_workflow(cmd)
+    result = asyncio.run(_do_start_workflow(cmd))
     console.print(f"Workflow started. Initial Session ID: [bold blue]{result.initial_session_id}[/bold blue]")
 
 @inject
-def _do_listen(
+async def _do_listen(
     runner: EventListenerRunner = Provide["orchestration_container.event_listener_runner"],
 ):
-    return asyncio.run(runner.run())
+    return await runner.run()
 
 def listen():
     """Start the long-running event listener for domain events."""
     console.print("Starting event listener process...")
-    _do_listen()
+    asyncio.run(_do_listen())
