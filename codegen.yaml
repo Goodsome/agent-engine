@@ -1,7 +1,340 @@
 # yaml-language-server: $schema=./codegen.schema.json
 name: AgentEngine
-description: ''
 contexts:
+- name: Bootstrap
+- name: Integration
+  domain:
+    aggregates:
+    - name: ConversationContext
+      description: 聚合根 - 飞书会话的对话上下文，用于多轮对话记忆
+      base_types:
+      - Aggregate
+      attributes:
+      - type: ChatId
+        name: chat_id
+      - type: dict
+        container: list
+        name: messages
+        default: list
+      - type: SessionId
+        optional: true
+        name: current_session_id
+      behaviors:
+      - name: add_message
+        description: "添加消息到对话历史\n\nArgs:\n    role: 消息角色 (user/assistant)\n    content:\
+          \ 消息内容"
+        inputs:
+        - type: Self
+          name: self
+        - type: string
+          name: role
+        - type: string
+          name: content
+        output:
+          type: None
+      - name: set_session
+        description: "设置当前会话ID\n\nArgs:\n    session_id: Agent 会话ID"
+        inputs:
+        - type: Self
+          name: self
+        - type: SessionId
+          name: session_id
+        output:
+          type: None
+      - name: clear_messages
+        description: 清空对话历史
+        inputs:
+        - type: Self
+          name: self
+        output:
+          type: None
+      - name: create
+        description: "创建新的对话上下文\n\nArgs:\n    chat_id: 飞书会话ID\n\nReturns:\n    新的\
+          \ ConversationContext 实例"
+        inputs:
+        - type: Self
+          container: type
+          name: cls
+        - type: ChatId
+          name: chat_id
+        output:
+          type: ConversationContext
+    enums:
+    - name: ChatType
+      description: 飞书聊天类型
+      members:
+      - name: P2P
+        value: p2p
+      - name: GROUP
+        value: group
+    value_objects:
+    - name: ChatId
+      description: 飞书会话唯一标识
+      attributes:
+      - type: string
+        name: value
+      behaviors:
+      - name: create
+        description: 创建会话ID
+        inputs:
+        - type: Self
+          container: type
+          name: cls
+        - type: string
+          name: value
+        output:
+          type: ChatId
+      - name: reconstitute
+        description: 从原始值重建
+        inputs:
+        - type: Self
+          container: type
+          name: cls
+        - type: string
+          name: value
+        output:
+          type: ChatId
+      - name: __str__
+        inputs:
+        - type: Self
+          name: self
+        output:
+          type: string
+      - name: serialize
+        inputs:
+        - type: Self
+          name: self
+        output:
+          type: string
+    - name: FeishuMessagePayload
+      description: 飞书消息负载 - 防腐层数据契约
+      attributes:
+      - type: FeishuMessageId
+        name: message_id
+      - type: ChatId
+        name: chat_id
+      - type: ChatType
+        name: chat_type
+      - type: string
+        name: content
+      - type: string
+        optional: true
+        name: sender_id
+    - name: FeishuMessageId
+      description: 飞书消息唯一标识
+      attributes:
+      - type: string
+        name: value
+      behaviors:
+      - name: create
+        description: 创建飞书消息ID
+        inputs:
+        - type: Self
+          container: type
+          name: cls
+        - type: string
+          name: value
+        output:
+          type: FeishuMessageId
+      - name: reconstitute
+        description: 从原始值重建
+        inputs:
+        - type: Self
+          container: type
+          name: cls
+        - type: string
+          name: value
+        output:
+          type: FeishuMessageId
+      - name: __str__
+        inputs:
+        - type: Self
+          name: self
+        output:
+          type: string
+      - name: serialize
+        inputs:
+        - type: Self
+          name: self
+        output:
+          type: string
+    ports:
+    - name: FeishuClientPort
+      description: 飞书客户端端口 - 处理WebSocket连接和API调用
+      kind: adapter
+      operations:
+      - name: send_message
+        description: "发送新消息到会话\n\nArgs:\n    chat_id: 会话ID\n    content: 消息内容\n\n\
+          Returns:\n    发送的消息ID"
+        inputs:
+        - type: Self
+          name: self
+        - type: ChatId
+          name: chat_id
+        - type: string
+          name: content
+        output:
+          type: FeishuMessageId
+      - name: reply_message
+        description: "回复消息\n\nArgs:\n    message_id: 要回复的消息ID\n    content: 回复内容\n\
+          \nReturns:\n    回复的消息ID"
+        inputs:
+        - type: Self
+          name: self
+        - type: FeishuMessageId
+          name: message_id
+        - type: string
+          name: content
+        output:
+          type: FeishuMessageId
+      - name: update_message
+        description: "更新消息内容（用于流式输出）\n\nArgs:\n    message_id: 要更新的消息ID\n    content:\
+          \ 新的消息内容"
+        inputs:
+        - type: Self
+          name: self
+        - type: FeishuMessageId
+          name: message_id
+        - type: string
+          name: content
+        output:
+          type: None
+      - name: set_message_handler
+        description: "设置消息处理器\n\nArgs:\n    handler: 异步消息处理函数"
+        inputs:
+        - type: Self
+          name: self
+        - type: Any
+          custom_type_string: Callable[[FeishuMessagePayload], Awaitable[None]]
+          name: handler
+        output:
+          type: None
+      - name: start_listener
+        description: 启动 WebSocket 监听器
+        inputs:
+        - type: Self
+          name: self
+        output:
+          type: None
+    - name: ConversationContextRepository
+      description: 会话上下文仓储 - 持久化聊天对话历史
+      kind: repository
+      aggregate: ConversationContext
+      operations:
+      - name: save
+        description: "保存会话上下文\n\nArgs:\n    context: 要保存的会话上下文"
+        inputs:
+        - type: Self
+          name: self
+        - type: ConversationContext
+          name: context
+        output:
+          type: None
+      - name: find_by_chat_id
+        description: "根据会话ID查找上下文\n\nArgs:\n    chat_id: 飞书会话ID\n\nReturns:\n    会话上下文，如果不存在则返回\
+          \ None"
+        inputs:
+        - type: Self
+          name: self
+        - type: ChatId
+          name: chat_id
+        output:
+          type: ConversationContext
+          optional: true
+      - name: delete
+        description: "删除会话上下文\n\nArgs:\n    chat_id: 飞书会话ID"
+        inputs:
+        - type: Self
+          name: self
+        - type: ChatId
+          name: chat_id
+        output:
+          type: None
+  application:
+    use_cases:
+    - name: HandleFeishuMessage
+      kind: command
+      inputs:
+      - type: FeishuMessagePayload
+        name: payload
+      outputs:
+      - type: FeishuMessageId
+        name: reply_message_id
+      - type: SessionId
+        name: session_id
+      description: '处理飞书消息 - 非流式响应
+
+
+        流程:
+
+        1. 获取或创建会话上下文
+
+        2. 生成虚拟 JobId (防腐层)
+
+        3. 触发 Agent 执行
+
+        4. 根据聊天类型路由回复 (P2P 发送新消息, GROUP 回复消息)
+
+        5. 更新会话上下文'
+      dependencies:
+      - type: FeishuClientPort
+        name: feishu_client
+      - type: ExecutionTriggerPort
+        name: execution_trigger
+      - type: ConversationContextRepository
+        name: context_repo
+  infrastructure:
+    implementations:
+    - name: SqlAlchemyConversationContextRepository
+      implements: ConversationContextRepository
+      technology: sql
+      description: '使用 PostgreSQL 持久化会话上下文
+
+
+        TODO: 实现数据库模型映射
+
+        当前为内存实现，用于快速原型验证'
+      attributes:
+      - type: Any
+        custom_type_string: async_sessionmaker[AsyncSession]
+        name: session_factory
+      - type: ConversationContext
+        container: map
+        name: _cache
+    - name: LarkWsClient
+      implements: FeishuClientPort
+      technology: lark
+      description: '基于 lark-oapi SDK 的 WebSocket 客户端实现
+
+
+        支持两种消息处理模式:
+
+        1. P2P 私聊: 通过 chat_id 创建新消息
+
+        2. GROUP 群聊: 通过 message_id 回复消息
+
+
+        注意: lark-oapi 的 WebSocket 客户端是同步的，start() 方法内部调用
+
+        loop.run_until_complete()，因此在 asyncio.run() 环境下需要通过
+
+        run_in_executor 在线程池中运行。'
+      attributes:
+      - type: string
+        name: app_id
+      - type: string
+        name: app_secret
+      - type: lark.Client
+        name: _client
+      - type: lark.ws.Client
+        name: _ws_client
+      - type: Any
+        optional: true
+        custom_type_string: Callable[[FeishuMessagePayload], Awaitable[None]] | None
+        name: _message_handler
+      - type: asyncio.AbstractEventLoop
+        optional: true
+        name: _loop
 - name: Shared
   domain:
     value_objects:
@@ -12,23 +345,39 @@ contexts:
         name: value
       behaviors:
       - name: create
+        inputs:
+        - type: Self
+          container: type
+          name: cls
         output:
           type: any
       - name: reconstitute
         inputs:
+        - type: Self
+          container: type
+          name: cls
         - type: Any
           custom_type_string: Union[UUID, str]
           name: value
         output:
           type: any
       - name: __str__
+        inputs:
+        - type: Self
+          name: self
         output:
           type: any
       - name: serialize
+        inputs:
+        - type: Self
+          name: self
         output:
           type: string
       - name: validate_from_primitive
         inputs:
+        - type: Self
+          container: type
+          name: cls
         - type: any
           name: data
         output:
@@ -40,23 +389,39 @@ contexts:
         name: value
       behaviors:
       - name: create
+        inputs:
+        - type: Self
+          container: type
+          name: cls
         output:
           type: any
       - name: reconstitute
         inputs:
+        - type: Self
+          container: type
+          name: cls
         - type: Any
           custom_type_string: Union[UUID, str]
           name: value
         output:
           type: any
       - name: __str__
+        inputs:
+        - type: Self
+          name: self
         output:
           type: any
       - name: serialize
+        inputs:
+        - type: Self
+          name: self
         output:
           type: string
       - name: validate_from_primitive
         inputs:
+        - type: Self
+          container: type
+          name: cls
         - type: any
           name: data
         output:
@@ -68,23 +433,39 @@ contexts:
         name: value
       behaviors:
       - name: create
+        inputs:
+        - type: Self
+          container: type
+          name: cls
         output:
           type: any
       - name: reconstitute
         inputs:
+        - type: Self
+          container: type
+          name: cls
         - type: Any
           custom_type_string: Union[UUID, str]
           name: value
         output:
           type: any
       - name: __str__
+        inputs:
+        - type: Self
+          name: self
         output:
           type: any
       - name: serialize
+        inputs:
+        - type: Self
+          name: self
         output:
           type: string
       - name: validate_from_primitive
         inputs:
+        - type: Self
+          container: type
+          name: cls
         - type: any
           name: data
         output:
@@ -94,6 +475,8 @@ contexts:
     aggregates:
     - name: AgentSession
       description: 聚合根 — 一次完整的 Agent 运行生命周期，包括 Prompt 组装、工具挂载和最终输出。
+      base_types:
+      - Aggregate
       attributes:
       - type: SessionId
         name: id
@@ -111,16 +494,23 @@ contexts:
         name: error_message
       behaviors:
       - name: start
+        inputs:
+        - type: Self
+          name: self
         output:
           type: None
       - name: finish_with_success
         inputs:
+        - type: Self
+          name: self
         - type: string
           name: output
         output:
           type: None
       - name: finish_with_error
         inputs:
+        - type: Self
+          name: self
         - type: string
           name: error
         output:
@@ -149,7 +539,10 @@ contexts:
       kind: adapter
       operations:
       - name: run
+        description: 执行 Agent 并返回完整响应
         inputs:
+        - type: Self
+          name: self
         - type: string
           name: system_prompt
         - type: string
@@ -160,12 +553,15 @@ contexts:
         - type: ModelTier
           optional: true
           name: model_tier
-          default: None
         output:
           type: string
       - name: run_stream
-        description: 流式执行 Agent 并返回文本块迭代器
+        description: "流式执行 Agent 并返回文本块迭代器\n\n用于实时输出场景（如飞书消息流式更新）\n\nArgs:\n    system_prompt:\
+          \ 系统提示词\n    user_prompt: 用户输入\n    tools: 允许使用的工具列表\n    model_tier: 模型档位\
+          \ (PRO/FAST)\n\nYields:\n    文本块"
         inputs:
+        - type: Self
+          name: self
         - type: string
           name: system_prompt
         - type: string
@@ -176,7 +572,6 @@ contexts:
         - type: ModelTier
           optional: true
           name: model_tier
-          default: None
         output:
           type: Any
           custom_type_string: AsyncIterator[str]
@@ -186,18 +581,24 @@ contexts:
       operations:
       - name: save
         inputs:
+        - type: Self
+          name: self
         - type: AgentSession
           name: session
         output:
           type: None
       - name: delete
         inputs:
+        - type: Self
+          name: self
         - type: SessionId
           name: agent_session_id
         output:
           type: None
       - name: find_by_id
         inputs:
+        - type: Self
+          name: self
         - type: SessionId
           name: agent_session_id
         output:
@@ -207,36 +608,36 @@ contexts:
     use_cases:
     - name: ExecuteAgentSession
       kind: command
+      inputs:
+      - type: JobId
+        name: job_id
+      - type: string
+        name: system_prompt
+      - type: string
+        optional: true
+        name: requirement
+      - type: any
+        container: map
+        name: context_payload
+        default: dict
+      - type: ModelTier
+        optional: true
+        name: model_tier
+      outputs:
+      - type: SessionId
+        name: session_id
+      - type: boolean
+        name: is_success
+      - type: string
+        optional: true
+        name: output
+      description: 核心用例：接收已组装好的 system_prompt 与上下文，调用 AgentGateway 执行。这是 Orchestration
+        域中 ExecutionTriggerPort 的物理接收端。
       dependencies:
       - type: AgentGateway
         name: agent_gateway
       - type: AgentSessionRepository
         name: session_repo
-      command:
-        attributes:
-        - type: JobId
-          name: job_id
-        - type: string
-          name: system_prompt
-        - type: string
-          optional: true
-          name: requirement
-        - type: any
-          container: map
-          optional: true
-          name: context_payload
-        - type: ModelTier
-          optional: true
-          name: model_tier
-      result:
-        attributes:
-        - type: SessionId
-          name: session_id
-        - type: boolean
-          name: is_success
-        - type: string
-          optional: true
-          name: output
   infrastructure:
     implementations:
     - name: SqlAlchemySessionRepository
@@ -251,11 +652,28 @@ contexts:
       implements: AgentGateway
       technology: claude
       description: 封装对 Claude Agent SDK 的调用，将工具和 Prompt 注入并执行
+      attributes:
+      - type: string
+        container: list
+        name: _stderr_output
+        default: list
+      private_methods:
+      - name: _stderr_callback
+        description: Capture stderr output for error reporting.
+        inputs:
+        - type: Self
+          name: self
+        - type: string
+          name: line
+        output:
+          type: None
 - name: Orchestration
   domain:
     aggregates:
     - name: DispatchJob
       description: 聚合根 — 记录一次从 TaskGraph 拉取任务并尝试执行的分发记录。
+      base_types:
+      - Aggregate
       attributes:
       - type: JobId
         name: id
@@ -270,15 +688,22 @@ contexts:
       behaviors:
       - name: mark_running
         inputs:
+        - type: Self
+          name: self
         - type: SessionId
           name: session_id
         output:
           type: None
       - name: mark_completed
+        inputs:
+        - type: Self
+          name: self
         output:
           type: None
       - name: mark_failed
         inputs:
+        - type: Self
+          name: self
         - type: string
           name: reason
         output:
@@ -349,23 +774,31 @@ contexts:
       - type: string
         name: name
     - name: SopContent
+      description: ''
       attributes:
       - type: string
         name: system_prompt
       - type: ModelTier
         optional: true
         name: model_tier
-        default: None
     ports:
     - name: DomainEventListenerPort
       description: 端口：领域事件监听器，以异步迭代器形式持续产出事件
       kind: adapter
       operations:
       - name: listen
+        description: 持续监听并逐个产出领域事件
+        inputs:
+        - type: Self
+          name: self
         output:
           type: Any
           custom_type_string: AsyncIterator[DispatchableTaskEvent]
       - name: close
+        description: 优雅关闭接口
+        inputs:
+        - type: Self
+          name: self
         output:
           type: None
     - name: DispatchJobRepository
@@ -374,47 +807,32 @@ contexts:
       operations:
       - name: save
         inputs:
+        - type: Self
+          name: self
         - type: DispatchJob
           name: job
         output:
           type: None
       - name: delete
         inputs:
+        - type: Self
+          name: self
         - type: JobId
           name: dispatch_job_id
         output:
           type: None
       - name: find_by_id
         inputs:
+        - type: Self
+          name: self
         - type: JobId
           name: dispatch_job_id
         output:
           type: DispatchJob
           optional: true
-    - name: ExecutionTriggerPort
-      description: 定义一个明确的跨上下文调用端口，用于触发 Execution 域。
+    - name: TriggerSessionResult
+      description: 触发 Agent 会话的结果
       kind: adapter
-      operations:
-      - name: trigger_session
-        inputs:
-        - type: JobId
-          name: job_id
-        - type: string
-          name: system_prompt
-        - type: string
-          optional: true
-          name: requirement
-          default: None
-        - type: dict
-          optional: true
-          name: context_payload
-          default: None
-        - type: ModelTier
-          optional: true
-          name: model_tier
-          default: None
-        output:
-          type: SessionId
     - name: SopRepository
       description: SOP 仓储，根据 planning_level 和 status 加载对应的操作规程
       kind: repository
@@ -422,6 +840,8 @@ contexts:
       operations:
       - name: get_sop
         inputs:
+        - type: Self
+          name: self
         - type: string
           name: planning_level
         - type: string
@@ -433,6 +853,9 @@ contexts:
       kind: adapter
       operations:
       - name: fetch_ready_tasks
+        inputs:
+        - type: Self
+          name: self
         output:
           type: ReadyTaskDTO
           container: list
@@ -440,6 +863,17 @@ contexts:
     use_cases:
     - name: HandleDispatchableTaskEvent
       kind: command
+      inputs:
+      - type: Any
+        custom_type_string: Union[TaskReadyEvent, TaskReviewRequestedEvent]
+        name: event
+      outputs:
+      - type: string
+        name: job_id
+      - type: string
+        name: session_id
+      description: 处理可调度任务事件（TaskReadyEvent, TaskReviewRequestedEvent）的用例：创建 DispatchJob
+        -> 加载 SOP -> 触发执行
       dependencies:
       - type: DispatchJobRepository
         name: job_repo
@@ -447,14 +881,15 @@ contexts:
         name: execution_trigger
       - type: SopRepository
         name: sop_repo
-      result:
-        attributes:
-        - type: string
-          name: job_id
-        - type: string
-          name: session_id
     - name: StartInitialWorkflow
       kind: command
+      inputs:
+      - type: string
+        name: raw_requirement
+      outputs:
+      - type: string
+        name: initial_session_id
+      description: CLI 入口：接收用户自然语言指令，加载 sop_story_decompose，拉起一个 Agent Session 进行需求拆解。
       dependencies:
       - type: DispatchJobRepository
         name: job_repo
@@ -464,16 +899,13 @@ contexts:
         name: sop_repo
       - type: string
         name: project_id
-      command:
-        attributes:
-        - type: string
-          name: raw_requirement
-      result:
-        attributes:
-        - type: string
-          name: initial_session_id
     - name: RunEventLoopTick
       kind: command
+      outputs:
+      - type: integer
+        name: dispatched_count
+      description: 核心调度循环的一帧 (Tick)：查询 READY 任务 -> 加载对应 SOP -> 创建 DispatchJob -> 触发
+        Execution。
       dependencies:
       - type: TaskGraphQueryPort
         name: task_query_port
@@ -483,10 +915,6 @@ contexts:
         name: execution_trigger
       - type: SopRepository
         name: sop_repo
-      result:
-        attributes:
-        - type: integer
-          name: dispatched_count
   infrastructure:
     implementations:
     - name: SqlAlchemyDispatchJobRepository
@@ -497,6 +925,25 @@ contexts:
       - type: Any
         custom_type_string: async_sessionmaker[AsyncSession]
         name: session_factory
+    - name: LocalFileSopRepository
+      implements: SopRepository
+      technology: local
+      description: 从本地文件系统（sops/ 目录）读取带有 Frontmatter 的 Markdown 格式 SOP，并整理为 system_prompt
+      attributes:
+      - type: string
+        optional: true
+        name: base_dir
+      private_methods:
+      - name: _build_system_prompt
+        inputs:
+        - type: Self
+          name: self
+        - type: dict
+          name: metadata
+        - type: string
+          name: content
+        output:
+          type: string
     - name: InProcessExecutionTrigger
       implements: ExecutionTriggerPort
       technology: in
@@ -518,10 +965,11 @@ contexts:
       description: 从本地文件系统（sops/ 目录）读取带有 Frontmatter 的 Markdown 格式 SOP，并整理为 system_prompt
       attributes:
       - type: string
-        optional: true
         name: base_dir
+        default: 'lambda: str(Path(agent_engine.__file__).parent / ''sops'')'
       private_methods:
       - name: _build_system_prompt
+        description: 将 SOP Frontmatter 数据和 Markdown 内容整理为完整的 system_prompt 字符串
         inputs:
         - type: dict
           name: metadata
@@ -529,189 +977,4 @@ contexts:
           name: content
         output:
           type: string
-- name: Entrypoints
 - name: Sops
-- name: Integration
-  domain:
-    enums:
-    - name: ChatType
-      description: 飞书聊天类型
-      members:
-      - name: P2P
-        value: p2p
-      - name: GROUP
-        value: group
-    value_objects:
-    - name: FeishuMessageId
-      description: 飞书消息唯一标识
-      attributes:
-      - type: string
-        name: value
-      behaviors:
-      - name: create
-        output:
-          type: any
-      - name: reconstitute
-        inputs:
-        - type: string
-          name: value
-        output:
-          type: any
-      - name: __str__
-        output:
-          type: any
-      - name: serialize
-        output:
-          type: string
-    - name: ChatId
-      description: 飞书会话唯一标识
-      attributes:
-      - type: string
-        name: value
-      behaviors:
-      - name: create
-        output:
-          type: any
-      - name: reconstitute
-        inputs:
-        - type: string
-          name: value
-        output:
-          type: any
-      - name: __str__
-        output:
-          type: any
-      - name: serialize
-        output:
-          type: string
-    - name: FeishuMessagePayload
-      description: 飞书消息负载 - 防腐层数据契约
-      attributes:
-      - type: FeishuMessageId
-        name: message_id
-      - type: ChatId
-        name: chat_id
-      - type: ChatType
-        name: chat_type
-      - type: string
-        name: content
-      - type: string
-        name: sender_id
-    aggregates:
-    - name: ConversationContext
-      description: 聚合根 - 飞书会话的对话上下文，用于多轮对话记忆
-      attributes:
-      - type: ChatId
-        name: chat_id
-      - type: list
-        custom_type_string: list[dict]
-        name: messages
-      - type: SessionId
-        optional: true
-        name: current_session_id
-      behaviors:
-      - name: add_message
-        inputs:
-        - type: string
-          name: role
-        - type: string
-          name: content
-        output:
-          type: None
-      - name: set_session
-        inputs:
-        - type: SessionId
-          name: session_id
-        output:
-          type: None
-    ports:
-    - name: FeishuClientPort
-      description: 飞书客户端端口 - 处理WebSocket连接和API调用
-      kind: adapter
-      operations:
-      - name: send_message
-        inputs:
-        - type: ChatId
-          name: chat_id
-        - type: string
-          name: content
-        output:
-          type: FeishuMessageId
-      - name: reply_message
-        inputs:
-        - type: FeishuMessageId
-          name: message_id
-        - type: string
-          name: content
-        output:
-          type: FeishuMessageId
-      - name: update_message
-        inputs:
-        - type: FeishuMessageId
-          name: message_id
-        - type: string
-          name: content
-        output:
-          type: None
-      - name: start_listener
-        output:
-          type: None
-    - name: ConversationContextRepository
-      description: 会话上下文仓储 - 持久化聊天对话历史
-      kind: repository
-      aggregate: ConversationContext
-      operations:
-      - name: save
-        inputs:
-        - type: ConversationContext
-          name: context
-        output:
-          type: None
-      - name: find_by_chat_id
-        inputs:
-        - type: ChatId
-          name: chat_id
-        output:
-          type: ConversationContext
-          optional: true
-  application:
-    use_cases:
-    - name: HandleFeishuMessage
-      kind: command
-      description: 处理飞书消息 - 非流式响应
-      dependencies:
-      - type: FeishuClientPort
-        name: feishu_client
-      - type: ExecutionTriggerPort
-        name: execution_trigger
-      - type: ConversationContextRepository
-        name: context_repo
-      command:
-        attributes:
-        - type: FeishuMessagePayload
-          name: payload
-      result:
-        attributes:
-        - type: FeishuMessageId
-          name: reply_message_id
-        - type: SessionId
-          name: session_id
-  infrastructure:
-    implementations:
-    - name: LarkWsClient
-      implements: FeishuClientPort
-      technology: lark
-      description: 基于 lark-oapi SDK 的 WebSocket 客户端实现
-      attributes:
-      - type: string
-        name: app_id
-      - type: string
-        name: app_secret
-    - name: SqlAlchemyConversationContextRepository
-      implements: ConversationContextRepository
-      technology: sql
-      description: 使用 PostgreSQL 持久化会话上下文
-      attributes:
-      - type: Any
-        custom_type_string: async_sessionmaker[AsyncSession]
-        name: session_factory

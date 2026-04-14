@@ -16,6 +16,8 @@ from agent_engine.orchestration.domain.ports.execution_trigger_port import (
 from agent_engine.orchestration.domain.ports.sop_repository import SopRepository
 from agent_engine.shared.domain.value_objects.job_id import JobId
 
+class HandleDispatchableTaskEventCommand(BaseModel):
+    event: TaskReadyEvent | TaskReviewRequestedEvent
 
 class HandleDispatchableTaskEventResult(BaseModel):
     job_id: str
@@ -30,7 +32,8 @@ class HandleDispatchableTaskEvent:
     execution_trigger: ExecutionTriggerPort
     sop_repo: SopRepository
 
-    async def execute(self, event: Union[TaskReadyEvent, TaskReviewRequestedEvent]) -> HandleDispatchableTaskEventResult:
+    async def execute(self, cmd: HandleDispatchableTaskEventCommand) -> HandleDispatchableTaskEventResult:
+        event = cmd.event
         job = DispatchJob(
             id=JobId(value=uuid.uuid4()),
             task_id=event.task_id,
