@@ -4,8 +4,8 @@ Provides root configuration and DI container factory.
 """
 from .config import load_all_configurations, AppConfig
 from .container import ApplicationContainer
-from .setup import create_container, bootstrap
-from .logging import setup_logging, setup_cli_logging, setup_worker_logging, setup_mcp_logging
+from .setup import create_container
+from .logging import setup_logging, setup_cli_logging, setup_mcp_logging
 
 
 __all__ = [
@@ -13,9 +13,7 @@ __all__ = [
     "AppConfig",
     "ApplicationContainer",
     "create_container",
-    "bootstrap",
     "setup_logging",
     "setup_cli_logging",
-    "setup_worker_logging",
     "setup_mcp_logging"
 ]

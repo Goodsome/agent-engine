@@ -72,7 +72,7 @@ class AppConfig(BaseSettings):
         # Load global first, then allow local .env to override
         env_file=(GLOBAL_ENV_FILE, LOCAL_ENV_FILE),
         env_file_encoding="utf-8",
-        case_sensitive=True,
+        case_sensitive=False,
         extra="ignore"  # Ignore unexpected environment variables
     )
 

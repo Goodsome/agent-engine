@@ -1,11 +1,11 @@
 import logging
 from dataclasses import dataclass
 
-from agent_engine.orchestration.domain.ports.domain_event_listener_port import (
-    DomainEventListenerPort,
-)
 from agent_engine.orchestration.application.use_cases.handle_dispatchable_task_event import (
     HandleDispatchableTaskEvent,
+)
+from agent_engine.orchestration.domain.ports.domain_event_listener_port import (
+    DomainEventListenerPort,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,10 +31,14 @@ class EventListenerRunner:
                     )
                     continue
 
-                logger.info(f"🔔 收到当前项目事件: {event.event_type} task_id={event.task_id.value}")
+                logger.info(
+                    f"🔔 收到当前项目事件: {event.event_type} task_id={event.task_id.value}"
+                )
                 try:
                     result = await self.handle_dispatchable_task.execute(event)
-                    logger.info(f"✅ 已调度 job={result.job_id}, session={result.session_id}")
+                    logger.info(
+                        f"✅ 已调度 job={result.job_id}, session={result.session_id}"
+                    )
                 except Exception as e:
                     logger.exception(f"❌ 处理事件失败: {e}")
         finally:

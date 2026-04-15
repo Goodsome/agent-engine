@@ -37,11 +37,4 @@ def create_container(
     return container
 
 
-def bootstrap() -> ApplicationContainer:
-    """
-    向后兼容的引导函数：保持原有API不变
-    """
-    return create_container()
-
-
-__all__ = ["create_container", "bootstrap"]
+__all__ = ["create_container"]

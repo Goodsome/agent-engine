@@ -81,17 +81,12 @@ def setup_logging(
 # 预定义常用的日志配置
 def setup_cli_logging() -> logging.Logger:
     """为CLI命令配置日志"""
-    return setup_logging(logger_name="agent_engine.cli", log_file="cli.log")
-
-
-def setup_worker_logging() -> logging.Logger:
-    """为Worker服务配置日志"""
-    return setup_logging(logger_name="agent_engine.worker", log_file="worker.log")
+    return setup_logging(logger_name="agent_engine", log_file="cli.log")
 
 
 def setup_mcp_logging() -> logging.Logger:
     """为MCP服务配置日志"""
-    return setup_logging(logger_name="agent_engine.mcp", log_file="mcp.log")
+    return setup_logging(logger_name="agent_engine", log_file="mcp.log")
 
 
-__all__ = ["setup_logging", "setup_cli_logging", "setup_worker_logging", "setup_mcp_logging"]
+__all__ = ["setup_logging", "setup_cli_logging", "setup_mcp_logging"]

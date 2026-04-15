@@ -45,13 +45,29 @@ def start_workflow(
     result = asyncio.run(_do_start_workflow(cmd))
     console.print(f"Workflow started. Initial Session ID: [bold blue]{result.initial_session_id}[/bold blue]")
 
+from dependency_injector.containers import DynamicContainer
+
 @inject
 async def _do_listen(
-    runner: EventListenerRunner = Provide["orchestration_container.event_listener_runner"],
+    container: DynamicContainer,
 ):
-    return await runner.run()
+    print(f"--- 探针 1: 成功进入 _do_listen ---")
+    await container.init_resources()
+    
+    try:
+        print("--- 探针 3: 准备调用 runner.run() ---")
+        runner = await container.orchestration_container.event_listener_runner()
+        
+        await runner.run()
+    except Exception as e:
+        print(f"--- 探针 4: 发生严重错误: {repr(e)} ---")
+        raise
+    finally:
+        await container.shutdown_resources()
 
-def listen():
+def listen(ctx: typer.Context):
     """Start the long-running event listener for domain events."""
     console.print("Starting event listener process...")
-    asyncio.run(_do_listen())
+    container: DynamicContainer = ctx.obj
+    
+    asyncio.run(_do_listen(container))
