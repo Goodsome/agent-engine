@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 from agent_engine.orchestration.application.use_cases.handle_dispatchable_task_event import (
     HandleDispatchableTaskEvent,
+    HandleDispatchableTaskEventCommand,
 )
 from agent_engine.orchestration.domain.ports.domain_event_listener_port import (
     DomainEventListenerPort,
@@ -26,8 +27,7 @@ class EventListenerRunner:
                 # 仅处理当前项目的事件
                 if event.project_id != self.project_id:
                     logger.debug(
-                        f"⏭️ 忽略其他项目的事件: {event.event_type} "
-                        f"(event.project_id={event.project_id}, current={self.project_id})"
+                        f"⏭️ 忽略其他项目的事件: {event.event_type} (event.project_id={event.project_id}, current={self.project_id})"
                     )
                     continue
 
@@ -35,7 +35,8 @@ class EventListenerRunner:
                     f"🔔 收到当前项目事件: {event.event_type} task_id={event.task_id.value}"
                 )
                 try:
-                    result = await self.handle_dispatchable_task.execute(event)
+                    cmd = HandleDispatchableTaskEventCommand(event=event)
+                    result = await self.handle_dispatchable_task.execute(cmd)
                     logger.info(
                         f"✅ 已调度 job={result.job_id}, session={result.session_id}"
                     )

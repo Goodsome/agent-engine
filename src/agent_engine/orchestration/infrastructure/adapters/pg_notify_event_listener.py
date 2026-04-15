@@ -1,7 +1,12 @@
 import json
 import logging
+from typing import override, Any
 import psycopg
+import asyncio
+
+from psycopg import sql
 from collections.abc import AsyncIterator
+from dataclasses import dataclass, field
 
 from agent_engine.orchestration.domain.events.task_ready_event import TaskReadyEvent
 from agent_engine.orchestration.domain.events.task_review_requested_event import TaskReviewRequestedEvent
@@ -15,37 +20,41 @@ from pydantic import PostgresDsn
 logger = logging.getLogger(__name__)
 
 
+@dataclass
 class PgNotifyEventListener(DomainEventListenerPort):
     """基于 PostgreSQL LISTEN/NOTIFY 的领域事件监听实现"""
-
-    def __init__(self, dsn: str | PostgresDsn, channel: str):
-        self._dsn = dsn
-        self._channel = channel
-        self._conn: psycopg.AsyncConnection | None = None
-
+    dsn: str | PostgresDsn
+    channel: str
+    _stop_event: asyncio.Event = field(default_factory=asyncio.Event)
+    
+    
+    @override
     async def listen(self) -> AsyncIterator[DispatchableTaskEvent]:
-        dsn = str(self._dsn)
-        # 统一处理 SQLAlchemy 的 DSN 格式以兼容 psycopg 原生连接
-        if dsn.startswith("postgresql+psycopg://"):
-            dsn = dsn.replace("postgresql+psycopg://", "postgresql://", 1)
+        dsn = str(self.dsn)
 
-        self._conn = await psycopg.AsyncConnection.connect(dsn, autocommit=True)
-        await self._conn.execute(f"LISTEN {self._channel}")
-        logger.info(f"✅ PgNotifyEventListener 已连接到频道: '{self._channel}'")
-
-        async for notify in self._conn.notifies():
+        while not self._stop_event.is_set():
             try:
-                data = json.loads(notify.payload)
-                event_type = data.get("event_type")
-                if event_type == "TaskReadyEvent":
-                    yield TaskReadyEvent.model_validate(data)
-                elif event_type == "TaskReviewRequestedEvent":
-                    yield TaskReviewRequestedEvent.model_validate(data)
-            except Exception as e:
-                # 添加异常保护，防止无效负载导致循环中断
-                logger.error(f"❌ 解析事件载荷失败: {e}, payload: {notify.payload}")
+                async with await psycopg.AsyncConnection.connect(dsn, autocommit=True) as conn:
+                    query = sql.SQL("LISTEN {channel}").format(
+                        channel=sql.Identifier(self.channel)
+                    )
+                    _ = await conn.execute(query)
+                    async for notify in conn.notifies():
+                        if self._stop_event.is_set():
+                            break
+                        data: dict[str, Any] = json.loads(notify.payload)
+                        event_type = data.get("event_type")
+                        if event_type == "TaskReadyEvent":
+                            yield TaskReadyEvent.model_validate(data)
+                        elif event_type == "TaskReviewRequestedEvent":
+                            yield TaskReviewRequestedEvent.model_validate(data)
+            except (psycopg.OperationalError, Exception) as e:
+                if self._stop_event.is_set():
+                    break
+                logger.error(f"📡 连接异常: {e}，准备重连...")
+                await asyncio.sleep(5)
 
+    @override
     async def close(self) -> None:
-        if self._conn and not self._conn.closed:
-            await self._conn.close()
-            logger.info("🛑 PgNotifyEventListener 连接已关闭")
+        """优雅停止"""
+        self._stop_event.set()
