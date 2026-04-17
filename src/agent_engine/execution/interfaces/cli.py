@@ -17,11 +17,11 @@ app = typer.Typer(help="Execution Context Commands")
 console = Console()
 
 @inject
-def _do_execute_session(
+async def _do_execute_session(
     cmd: ExecuteAgentSessionCommand,
     execute_use_case: ExecuteAgentSession = Provide["execution_container.execute_agent_session"],
 ):
-    return asyncio.run(execute_use_case.execute(cmd))
+    return await execute_use_case.execute(cmd)
 
 def execute_session(
     system_prompt: str = typer.Argument(..., help="The system prompt for the agent"),
@@ -45,7 +45,7 @@ def execute_session(
     console.print(f"Executing session with system prompt: [green]{system_prompt}[/green]")
 
     try:
-        result = _do_execute_session(cmd)
+        result = asyncio.run(_do_execute_session(cmd))
     except Exception as e:
         console.print("[bold red]Fatal error in execute_session:[/bold red]")
         console.print(traceback.format_exc())

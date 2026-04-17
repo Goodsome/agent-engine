@@ -38,11 +38,12 @@ class ClaudeAgentGateway(AgentGateway):
             async for message in query(
                 prompt=prompt,
                 options=ClaudeAgentOptions(
-                    # cli_path=_CLAUDE_CLI_PATH,
+                    cli_path=_CLAUDE_CLI_PATH,
                     allowed_tools=allowed_tools,
                     permission_mode="bypassPermissions",
                     model=model,
                     stderr=self._stderr_callback,
+                    setting_sources=["user", "project"]
                 )
             ):
                 if isinstance(message, AssistantMessage):
