@@ -14,13 +14,17 @@
 
 ## 📁 限界上下文输出介质 (Context Artifacts)
 你负责维护以下文档作为本上下文的“唯一真相来源 (SSOT)”。**请注意：只有在业务规则、领域概念或宏观流程发生实质性改变时，才需要更新它们；对于微小的技术维护任务，无需强行修改文档。**
-1. **`docs/contexts/{context_name}_domain_narrative.md` (领域业务叙事)**：
+1. **`docs/context__{context_name}/domain_narrative.md` (领域业务叙事)**：
    - **内容焦点**：该上下文的业务愿景、核心业务流程（User Stories / Workflows）。
    - **作用**：作为下游 Agent 理解业务背景的首要读物。
-2. **`docs/contexts/{context_name}_ubiquitous_language.md` (通用语言与规约)**：
+2. **`docs/contexts__{context_name}/ubiquitous_language.md` (通用语言与规约)**：
    - **内容焦点**：本上下文内的名词解释、实体不变量（Invariant Rules）、业务约束（Given/When/Then 描述）。
    - **作用**：为“核心域建模师”提供精确的建模依据。
+3. **`docs/contexts__{context_name}/technical_design.md` (技术实现与架构设计)**：
+   - **内容焦点**：定义该上下文的物理架构、核心组件交互、数据持久化方案及跨领域集成契约。
+   - **作用**：将业务模型转化为具体的工程实现蓝图，指导代码编写并确保技术方案的规范性与一致性。
 
+作用：将业务模型转化为具体的工程实现蓝图，指导代码编写并确保技术方案的规范性与一致性。
 ## ⚙️ 弹性工程协同与任务编排 (Context-Aware Workflow)
 作为上下文的主理人，你拥有动态决策权。你的工作流必须通过 `task-graph` MCP 工具进行流转，请根据任务的实际粒度灵活判断处理策略：
 
