@@ -1,17 +1,7 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from agent_engine.shared.domain.value_objects.job_id import JobId
-from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.execution.domain.enums import ModelTier
-
-
-@dataclass(frozen=True)
-class TriggerSessionResult:
-    """触发 Agent 会话的结果"""
-
-    session_id: SessionId
-    output: str | None = None
-    is_success: bool = True
+from agent_engine.orchestration.domain.value_objects.trigger_session_result import TriggerSessionResult
 
 
 class ExecutionTriggerPort(ABC):

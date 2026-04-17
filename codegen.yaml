@@ -808,6 +808,17 @@ contexts:
       - type: ModelTier
         optional: true
         name: model_tier
+    - name: TriggerSessionResult
+      description: 触发 Agent 会话的结果
+      attributes:
+      - type: SessionId
+        name: session_id
+      - type: string
+        optional: true
+        name: output
+      - type: boolean
+        name: is_success
+        default: true
     ports:
     - name: DomainEventListenerPort
       description: 端口：领域事件监听器，以异步迭代器形式持续产出事件
@@ -857,9 +868,29 @@ contexts:
         output:
           type: DispatchJob
           optional: true
-    - name: TriggerSessionResult
-      description: 触发 Agent 会话的结果
+    - name: ExecutionTriggerPort
+      description: 定义一个明确的跨上下文调用端口，用于触发 Execution 域。
       kind: adapter
+      operations:
+      - name: trigger_session
+        inputs:
+        - type: Self
+          name: self
+        - type: JobId
+          name: job_id
+        - type: string
+          name: system_prompt
+        - type: string
+          optional: true
+          name: requirement
+        - type: dict
+          optional: true
+          name: context_payload
+        - type: ModelTier
+          optional: true
+          name: model_tier
+        output:
+          type: TriggerSessionResult
     - name: SopRepository
       description: SOP 仓储，根据 scope_level 和 architecture_layer 加载对应的操作规程
       kind: repository
