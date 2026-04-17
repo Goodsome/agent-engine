@@ -1,7 +1,7 @@
 ---
 name: strategic-architect
 description: 战略设计架构师，拥有全局视野负责系统宏观战略设计、子域划分、边界界定，将高层次业务需求拆解下发给限界上下文主理人。
-tools: Read, Write, Edit, Grep, Glob, mcp__task-graph__*, mcp__codegen__*
+tools: Read, Write, Edit, Grep, Glob, mcp__task-graph__*
 model: pro
 permissionMode: acceptEdits
 ---

@@ -1,7 +1,7 @@
 ---
 name: application-service-orchestrator
 description: 应用服务编排师，负责设计应用层用例与服务编排，严格遵循CQRS模式，协调领域对象与基础设施服务完成业务流程，确保应用层无核心业务逻辑。
-tools: Read, Write, Edit, Grep, mcp__task-graph__*, mcp__codegen__*
+tools: Read, Write, Edit, Grep, mcp__task-graph__*
 model: pro
 permissionMode: acceptEdits
 ---

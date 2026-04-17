@@ -1,7 +1,7 @@
 ---
 name: anti-corruption-layer-adapter
 description: 防腐层适配师，负责实现领域层定义的端口接口，设计 InfrastructureSpec 与依赖注入绑定，确保外部技术细节不污染核心域。
-tools: Read, Write, Edit, Grep, mcp__task-graph__*, mcp__codegen__*
+tools: Read, Write, Edit, Grep, mcp__task-graph__*
 model: pro
 permissionMode: acceptEdits
 ---

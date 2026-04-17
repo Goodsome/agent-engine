@@ -1,7 +1,7 @@
 ---
 name: bounded-context-owner
 description: 限界上下文主理人，作为业务核心枢纽将宏观需求转化为业务规约，通过 TaskGraph 编排下游架构师任务，维护领域文档与通用语言。
-tools: Read, Write, Edit, Grep, Glob, mcp__task-graph__*, mcp__codegen__*
+tools: Read, Write, Edit, Grep, Glob, mcp__task-graph__*
 model: pro
 permissionMode: acceptEdits
 ---
