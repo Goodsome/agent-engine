@@ -42,16 +42,26 @@ class HandleDispatchableTaskEvent:
         await self.job_repo.save(job=job)
 
         sop_content = await self.sop_repo.get_sop(
-            planning_level=event.planning_level,
-            status=event.status,
+            scope_level=event.scope_level.value,
+            architecture_layer=event.architecture_layer.value if event.architecture_layer else None,
         )
+        # Determine requirement based on event type
+        from agent_engine.orchestration.domain.events.task_ready_event import TaskReadyEvent
+        if isinstance(event, TaskReadyEvent):
+            requirement = f"执行任务: {event.task_id.value}"
+        else:  # TaskReviewRequestedEvent
+            requirement = f"审查任务: {event.task_id.value}"
+        context_payload = {
+            "task_id": str(event.task_id.value),
+            "bounded_context": event.bounded_context,
+        }
 
         result = await self.execution_trigger.trigger_session(
             job_id=job.id,
             system_prompt=sop_content.system_prompt,
             model_tier=sop_content.model_tier,
-            requirement=f"执行任务(状态:{event.status.value}): {event.task_id.value}",
-            context_payload={"task_id": str(event.task_id.value), "status": event.status.value},
+            requirement=requirement,
+            context_payload=context_payload,
         )
 
         job.mark_running(session_id=result.session_id)

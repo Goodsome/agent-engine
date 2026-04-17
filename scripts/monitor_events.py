@@ -23,6 +23,10 @@ async def event_handler(payload: str):
         # 这里未来可以根据 event_type 路由到不同的处理逻辑
         if event_type == "TaskReadyEvent":
             print(f"🚀 动作: 准备拉起任务 {data.get('task_id')} 的执行器...")
+            print(f"   项目ID: {data.get('project_id')}")
+            print(f"   Scope级别: {data.get('scope_level')}")
+            print(f"   上下文: {data.get('bounded_context', '无')}")
+            print(f"   架构层: {data.get('architecture_layer', '无')}")
             
     except Exception as e:
         print(f"❌ 解析事件失败: {e}")

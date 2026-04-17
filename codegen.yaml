@@ -753,6 +753,33 @@ contexts:
         value: feature
       - name: ATOMIC
         value: atomic
+    - name: ScopeLevel
+      description: Defines the delegation level of the task, mapping directly to Agent
+        roles and context boundaries.
+      members:
+      - name: PROJECT
+        value: project
+      - name: CONTEXT
+        value: context
+      - name: ARCHITECTURAL
+        value: architectural
+      - name: ATOMIC
+        value: atomic
+    - name: ArchitectureLayer
+      description: DDD architecture layers.
+      members:
+      - name: DOMAIN
+        value: domain
+      - name: APPLICATION
+        value: application
+      - name: INFRASTRUCTURE
+        value: infrastructure
+      - name: INTERFACES
+        value: interfaces
+      - name: CROSS_CUTTING
+        value: cross_cutting
+      - name: NONE
+        value: none
     - name: RecurrenceType
       members:
       - name: ON_SUCCESS
@@ -834,7 +861,7 @@ contexts:
       description: 触发 Agent 会话的结果
       kind: adapter
     - name: SopRepository
-      description: SOP 仓储，根据 planning_level 和 status 加载对应的操作规程
+      description: SOP 仓储，根据 scope_level 和 architecture_layer 加载对应的操作规程
       kind: repository
       aggregate: Sop
       operations:
@@ -843,9 +870,10 @@ contexts:
         - type: Self
           name: self
         - type: string
-          name: planning_level
+          name: scope_level
         - type: string
-          name: status
+          optional: true
+          name: architecture_layer
         output:
           type: SopContent
     - name: TaskGraphQueryPort
@@ -959,6 +987,15 @@ contexts:
       implements: DomainEventListenerPort
       technology: pg
       description: 基于 PostgreSQL LISTEN/NOTIFY 的领域事件监听实现
+      attributes:
+      - type: Any
+        custom_type_string: Union[str, PostgresDsn]
+        name: dsn
+      - type: string
+        name: channel
+      - type: asyncio.Event
+        name: _stop_event
+        default: asyncio.Event
     - name: LocalFileSopRepository
       implements: SopRepository
       technology: local

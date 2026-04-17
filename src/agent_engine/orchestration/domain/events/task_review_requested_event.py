@@ -1,16 +1,13 @@
-from typing import Literal
-
+from pydantic import Field
 from agent_engine.shared.domain.value_objects.task_id import TaskId
-from agent_engine.orchestration.domain.enums import PlanningLevel, TaskStatus
+from agent_engine.orchestration.domain.enums import ScopeLevel, ArchitectureLayer
 from agent_engine.shared.events import DomainEvent
 
 
 class TaskReviewRequestedEvent(DomainEvent):
-    """
-    领域事件：某个 Task 进入 Review 状态，需要被调度进行代码审查或验收。
-    增加 project_id 字段，用于在多租户/多项目环境下仅处理当前相关任务。
-    """
-    project_id: str
-    task_id: TaskId
-    planning_level: PlanningLevel
-    status: Literal[TaskStatus.REVIEW] = TaskStatus.REVIEW
+    """Event emitted when a task is submitted for review."""
+    task_id: TaskId = Field(description="Task ID")
+    project_id: str = Field(description="Project ID")
+    scope_level: ScopeLevel = Field(description="Scope level of the task")
+    bounded_context: str | None = Field(default=None, description="Bounded context the task belongs to")
+    architecture_layer: ArchitectureLayer | None = Field(default=None, description="DDD architecture layer the task targets")
