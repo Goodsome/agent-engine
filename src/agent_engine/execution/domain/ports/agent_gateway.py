@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
+
 from agent_engine.execution.domain.enums import ModelTier
 
 
@@ -13,6 +14,7 @@ class AgentGateway(ABC):
         user_prompt: str,
         tools: list[str],
         model_tier: ModelTier | None = None,
+        session_id: str | None = None,
     ) -> str:
         """执行 Agent 并返回完整响应"""
         ...
@@ -24,6 +26,7 @@ class AgentGateway(ABC):
         user_prompt: str,
         tools: list[str],
         model_tier: ModelTier | None = None,
+        session_id: str | None = None,
     ) -> AsyncIterator[str]:
         """流式执行 Agent 并返回文本块迭代器
 

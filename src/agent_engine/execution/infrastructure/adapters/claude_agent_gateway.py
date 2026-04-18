@@ -7,7 +7,6 @@ from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, Result
 from claude_agent_sdk._errors import ProcessError
 
 
-# 使用用户安装的最新 CLI，而非 SDK bundled 版本
 _CLAUDE_CLI_PATH = str(Path.home() / ".local" / "bin" / "claude")
 
 
@@ -21,7 +20,7 @@ class ClaudeAgentGateway(AgentGateway):
         """Capture stderr output for error reporting."""
         self._stderr_output.append(line)
 
-    async def run(self, system_prompt: str, user_prompt: str, tools: list[str], model_tier: ModelTier | None = None) -> str:
+    async def run(self, system_prompt: str, user_prompt: str, tools: list[str], model_tier: ModelTier | None = None, session_id: str | None = None) -> str:
         prompt = f"{system_prompt}\n---\n{user_prompt}"
         allowed_tools = tools if tools else ["Read", "Edit", "Glob"]
 
@@ -38,7 +37,6 @@ class ClaudeAgentGateway(AgentGateway):
             async for message in query(
                 prompt=prompt,
                 options=ClaudeAgentOptions(
-                    cli_path=_CLAUDE_CLI_PATH,
                     allowed_tools=allowed_tools,
                     permission_mode="bypassPermissions",
                     model=model,
@@ -68,6 +66,7 @@ class ClaudeAgentGateway(AgentGateway):
         user_prompt: str,
         tools: list[str],
         model_tier: ModelTier | None = None,
+        session_id: str | None = None,
     ) -> AsyncIterator[str]:
         """流式执行 Agent 并返回文本块迭代器
 
@@ -85,7 +84,6 @@ class ClaudeAgentGateway(AgentGateway):
         async for message in query(
             prompt=prompt,
             options=ClaudeAgentOptions(
-                cli_path=_CLAUDE_CLI_PATH,
                 allowed_tools=allowed_tools,
                 permission_mode="acceptEdits",
                 model=model,

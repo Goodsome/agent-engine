@@ -55,7 +55,8 @@ class ExecuteAgentSession:
                 system_prompt=system_prompt,
                 user_prompt=cmd.requirement or "",
                 tools=[],
-                model_tier=cmd.model_tier
+                model_tier=cmd.model_tier,
+                session_id=str(session.id)
             )
             session.finish_with_success(output=output)
             is_success = True
