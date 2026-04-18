@@ -6,6 +6,11 @@ from dataclasses import dataclass, field
 from claude_agent_sdk import query, ClaudeAgentOptions, AssistantMessage, ResultMessage
 from claude_agent_sdk._errors import ProcessError
 
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 _CLAUDE_CLI_PATH = str(Path.home() / ".local" / "bin" / "claude")
 
@@ -32,33 +37,23 @@ class ClaudeAgentGateway(AgentGateway):
 
         self._stderr_output.clear()
 
-        try:
-            output_text = []
-            async for message in query(
-                prompt=prompt,
-                options=ClaudeAgentOptions(
-                    allowed_tools=allowed_tools,
-                    permission_mode="bypassPermissions",
-                    model=model,
-                    stderr=self._stderr_callback,
-                    setting_sources=["user", "project"]
-                )
-            ):
-                if isinstance(message, AssistantMessage):
-                    for block in message.content:
-                        if hasattr(block, "text"):
-                            output_text.append(block.text)
-                # Ignore ResultMessage for now, as we just want the text output
-            return "\n".join(output_text)
-        except ProcessError as e:
-            # Enhance the error message with captured stderr
-            if self._stderr_output:
-                captured_stderr = "\n".join(self._stderr_output)
-                if e.stderr == "Check stderr output for details":
-                    e.stderr = captured_stderr
-                else:
-                    e.stderr = f"{e.stderr}\n{captured_stderr}"
-            raise
+        output_text = []
+        async for message in query(
+            prompt=prompt,
+            options=ClaudeAgentOptions(
+                session_id=session_id,
+                allowed_tools=allowed_tools,
+                permission_mode="bypassPermissions",
+                model=model,
+                stderr=self._stderr_callback,
+                setting_sources=["user", "project"]
+            )
+        ):
+            if isinstance(message, AssistantMessage):
+                for block in message.content:
+                    if hasattr(block, "text"):
+                        output_text.append(block.text)
+        return "\n".join(output_text)
 
     async def run_stream(
         self,
