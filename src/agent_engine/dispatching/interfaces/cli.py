@@ -7,7 +7,7 @@ import typer
 from rich.console import Console
 from dependency_injector.wiring import Provide, inject
 
-from agent_engine.execution.application.use_cases.execute_agent_session import (
+from agent_engine.orchestration.application.use_cases.execute_agent_session import (
     ExecuteAgentSession,
     ExecuteAgentSessionCommand,
 )
@@ -19,7 +19,7 @@ console = Console()
 @inject
 async def _do_execute_session(
     cmd: ExecuteAgentSessionCommand,
-    execute_use_case: ExecuteAgentSession = Provide["execution_container.execute_agent_session"],
+    execute_use_case: ExecuteAgentSession = Provide["orchestration_container.execute_agent_session"],
 ):
     return await execute_use_case.execute(cmd)
 
@@ -46,7 +46,7 @@ def execute_session(
 
     try:
         result = asyncio.run(_do_execute_session(cmd))
-    except Exception as e:
+    except Exception:
         console.print("[bold red]Fatal error in execute_session:[/bold red]")
         console.print(traceback.format_exc())
         raise typer.Exit(code=1)

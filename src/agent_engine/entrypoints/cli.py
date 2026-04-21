@@ -1,6 +1,6 @@
 import typer
 from agent_engine.bootstrap import create_container, setup_cli_logging
-from agent_engine.execution.interfaces.cli import execute_session
+from agent_engine.dispatching.interfaces.cli import execute_session
 from agent_engine.orchestration.interfaces.cli import (
     listen,
     start_workflow,
@@ -16,7 +16,7 @@ def create_app():
     )
     container = create_container(init_resources=False)
     container.wire(modules=[
-        "agent_engine.execution.interfaces.cli",
+        "agent_engine.dispatching.interfaces.cli",
         "agent_engine.orchestration.interfaces.cli",
         "agent_engine.integration.interfaces.cli",
     ])

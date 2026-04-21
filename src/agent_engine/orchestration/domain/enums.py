@@ -8,6 +8,13 @@ class JobStatus(str, Enum):
     FAILED = "failed"
 
 
+class SessionStatus(str, Enum):
+    IDLE = "idle"
+    RUNNING = "running"
+    SUCCESS = "success"
+    ERROR = "error"
+
+
 class TaskStatus(str, Enum):
     """The lifecycle state of a task."""
 

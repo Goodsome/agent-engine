@@ -1,5 +1,4 @@
 from agent_engine.shared.models import Aggregate
-from typing import Union
 from pydantic import Field
 from agent_engine.shared.domain.value_objects.task_id import TaskId
 from agent_engine.shared.domain.value_objects.session_id import SessionId

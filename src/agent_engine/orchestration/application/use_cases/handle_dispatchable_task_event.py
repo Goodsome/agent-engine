@@ -1,6 +1,5 @@
 import uuid
 from dataclasses import dataclass
-from typing import Union
 from pydantic import BaseModel
 
 from agent_engine.orchestration.domain.aggregates.dispatch_job import DispatchJob
@@ -13,7 +12,7 @@ from agent_engine.orchestration.domain.ports.dispatch_job_repository import (
 from agent_engine.orchestration.domain.ports.execution_trigger_port import (
     ExecutionTriggerPort,
 )
-from agent_engine.orchestration.domain.ports.sop_repository import SopRepository
+from agent_engine.agent_registry.domain.ports.blueprint_registry import BlueprintRegistryPort
 from agent_engine.shared.domain.value_objects.job_id import JobId
 
 class HandleDispatchableTaskEventCommand(BaseModel):
@@ -30,7 +29,7 @@ class HandleDispatchableTaskEvent:
 
     job_repo: DispatchJobRepository
     execution_trigger: ExecutionTriggerPort
-    sop_repo: SopRepository
+    blueprint_registry: BlueprintRegistryPort
 
     async def execute(self, cmd: HandleDispatchableTaskEventCommand) -> HandleDispatchableTaskEventResult:
         event = cmd.event
@@ -41,7 +40,7 @@ class HandleDispatchableTaskEvent:
         )
         await self.job_repo.save(job=job)
 
-        sop_content = await self.sop_repo.get_sop(
+        blueprint = await self.blueprint_registry.get_blueprint(
             scope_level=event.scope_level.value,
             architecture_layer=event.architecture_layer.value if event.architecture_layer else None,
         )
@@ -58,8 +57,8 @@ class HandleDispatchableTaskEvent:
 
         result = await self.execution_trigger.trigger_session(
             job_id=job.id,
-            system_prompt=sop_content.system_prompt,
-            model_tier=sop_content.model_tier,
+            system_prompt=blueprint.system_prompt,
+            model_tier=blueprint.model_tier,
             requirement=requirement,
             context_payload=context_payload,
         )

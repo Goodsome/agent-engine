@@ -2,9 +2,8 @@ import asyncio
 import typer
 from typing import Annotated, cast
 from rich.console import Console
-from dependency_injector.wiring import Provide, Provider, inject
+from dependency_injector.wiring import Provide, inject
 
-from agent_engine.orchestration.container import Container
 from agent_engine.orchestration.application.use_cases.run_event_loop_tick import (
     RunEventLoopTick,
     RunEventLoopTickCommand,

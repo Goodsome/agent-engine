@@ -1,13 +1,12 @@
 from agent_engine.shared.domain.value_objects.job_id import JobId
-from agent_engine.shared.domain.value_objects.session_id import SessionId
 from dataclasses import dataclass
 from typing import Any
 from agent_engine.orchestration.domain.ports.execution_trigger_port import (
     ExecutionTriggerPort,
     TriggerSessionResult,
 )
-from agent_engine.execution.domain.enums import ModelTier
-from agent_engine.execution.application.use_cases.execute_agent_session import (
+from agent_engine.shared.domain.enums import ModelTier
+from agent_engine.orchestration.application.use_cases.execute_agent_session import (
     ExecuteAgentSession,
     ExecuteAgentSessionCommand,
 )

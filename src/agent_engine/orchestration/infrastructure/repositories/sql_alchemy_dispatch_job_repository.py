@@ -15,16 +15,16 @@ class SqlAlchemyDispatchJobRepository(DispatchJobRepository):
     session_factory: async_sessionmaker[AsyncSession]
 
     async def save(self, job: DispatchJob) -> None:
-        async with self.session_factory() as db_session:
+        async with self.session_factory():
             # TODO: 映射 Domain Object -> SQLAlchemy Model
             # db_session.add(model)
             # await db_session.commit()
             pass
 
     async def delete(self, dispatch_job_id: JobId) -> None:
-        async with self.session_factory() as db_session:
+        async with self.session_factory():
             pass
 
     async def find_by_id(self, dispatch_job_id: JobId) -> DispatchJob | None:
-        async with self.session_factory() as db_session:
+        async with self.session_factory():
             return None

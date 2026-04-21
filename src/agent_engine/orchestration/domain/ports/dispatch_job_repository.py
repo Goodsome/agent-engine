@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from agent_engine.orchestration.domain.aggregates.dispatch_job import DispatchJob
-from uuid import UUID
 
 from agent_engine.shared.domain.value_objects.job_id import JobId
 

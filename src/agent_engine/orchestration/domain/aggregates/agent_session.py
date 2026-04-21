@@ -1,4 +1,4 @@
-from agent_engine.execution.domain.enums import SessionStatus
+from agent_engine.orchestration.domain.enums import SessionStatus
 from agent_engine.shared.models import Aggregate
 from pydantic import Field
 from agent_engine.shared.domain.value_objects.session_id import SessionId

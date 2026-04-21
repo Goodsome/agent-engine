@@ -5,13 +5,12 @@ from agent_engine.shared.domain.value_objects.job_id import JobId
 from agent_engine.orchestration.domain.ports.execution_trigger_port import (
     ExecutionTriggerPort,
 )
-from agent_engine.orchestration.domain.ports.sop_repository import SopRepository
 from dataclasses import dataclass
+from pydantic import BaseModel
 from agent_engine.orchestration.domain.ports.dispatch_job_repository import (
     DispatchJobRepository,
 )
-from pydantic import BaseModel
-
+from agent_engine.agent_registry.domain.ports.blueprint_registry import BlueprintRegistryPort
 
 class StartInitialWorkflowCommand(BaseModel):
     raw_requirement: str
@@ -23,11 +22,11 @@ class StartInitialWorkflowResult(BaseModel):
 
 @dataclass
 class StartInitialWorkflow:
-    """CLI 入口：接收用户自然语言指令，加载 sop_story_decompose，拉起一个 Agent Session 进行需求拆解。"""
+    """CLI 入口：接收用户自然语言指令，加载蓝图，拉起一个 Agent Session 进行需求拆解。"""
 
     job_repo: DispatchJobRepository
     execution_trigger: ExecutionTriggerPort
-    sop_repo: SopRepository
+    blueprint_registry: BlueprintRegistryPort
     project_id: str
 
     async def execute(
@@ -39,14 +38,14 @@ class StartInitialWorkflow:
         )
         await self.job_repo.save(job=job)
 
-        sop_content = await self.sop_repo.get_sop(
-            planning_level="story", status="ready"
+        blueprint = await self.blueprint_registry.get_blueprint(
+            scope_level="project" # 之前是 story, 现在统一对齐 ScopeLevel.PROJECT
         )
 
         result = await self.execution_trigger.trigger_session(
             job_id=job.id,
-            system_prompt=sop_content.system_prompt,
-            model_tier=sop_content.model_tier,
+            system_prompt=blueprint.system_prompt,
+            model_tier=blueprint.model_tier,
             requirement=cmd.raw_requirement,
             context_payload={"project_id": self.project_id},
         )

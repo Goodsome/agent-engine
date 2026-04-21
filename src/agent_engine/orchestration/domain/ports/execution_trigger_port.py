@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from agent_engine.shared.domain.value_objects.job_id import JobId
-from agent_engine.execution.domain.enums import ModelTier
+from agent_engine.shared.domain.enums import ModelTier
 from agent_engine.orchestration.domain.value_objects.trigger_session_result import TriggerSessionResult
 
 
