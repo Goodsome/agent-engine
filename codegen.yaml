@@ -1,6 +1,44 @@
 # yaml-language-server: $schema=./codegen.schema.json
 name: AgentEngine
 contexts:
+- name: AgentRegistry
+  domain:
+    ports:
+    - name: BlueprintRegistryPort
+      description: 蓝图注册中心接口：负责根据上下文标识符查询执行蓝图
+      operations:
+      - name: get_blueprint
+        description: 获取指定层级和范围的执行蓝图
+        inputs:
+        - type: Self
+          name: self
+        - type: string
+          name: scope_level
+        - type: string
+          optional: true
+          name: architecture_layer
+        output:
+          type: ExecutionBlueprint
+  infrastructure:
+    implementations:
+    - name: LocalMarkdownBlueprintLoader
+      implements: BlueprintRegistryPort
+      technology: local
+      description: 基于本地 Markdown 文件的蓝图加载器
+      attributes:
+      - type: string
+        name: base_dir
+      private_methods:
+      - name: _build_system_prompt
+        description: 将 SOP Frontmatter 数据 and Markdown 内容整理为完整的 system_prompt 字符串
+        inputs:
+        - type: any
+          container: map
+          name: metadata
+        - type: string
+          name: content
+        output:
+          type: string
 - name: Bootstrap
 - name: Integration
   domain:
@@ -161,7 +199,6 @@ contexts:
     ports:
     - name: FeishuClientPort
       description: 飞书客户端端口 - 处理WebSocket连接和API调用
-      kind: adapter
       operations:
       - name: send_message
         description: "发送新消息到会话\n\nArgs:\n    chat_id: 会话ID\n    content: 消息内容\n\n\
@@ -218,8 +255,6 @@ contexts:
           type: None
     - name: ConversationContextRepository
       description: 会话上下文仓储 - 持久化聊天对话历史
-      kind: repository
-      aggregate: ConversationContext
       operations:
       - name: save
         description: "保存会话上下文\n\nArgs:\n    context: 要保存的会话上下文"
@@ -337,6 +372,14 @@ contexts:
         name: _loop
 - name: Shared
   domain:
+    enums:
+    - name: ModelTier
+      description: 模型能力档位定义
+      members:
+      - name: PRO
+        value: pro
+      - name: FAST
+        value: fast
     value_objects:
     - name: SessionId
       description: Agent 执行会话的唯一标识
@@ -470,7 +513,7 @@ contexts:
           name: data
         output:
           type: any
-- name: Execution
+- name: Orchestration
   domain:
     aggregates:
     - name: AgentSession
@@ -515,161 +558,6 @@ contexts:
           name: error
         output:
           type: None
-    enums:
-    - name: SessionStatus
-      members:
-      - name: IDLE
-        value: idle
-      - name: RUNNING
-        value: running
-      - name: SUCCESS
-        value: success
-      - name: ERROR
-        value: error
-    - name: ModelTier
-      description: 模型能力档位定义
-      members:
-      - name: PRO
-        value: pro
-      - name: FAST
-        value: fast
-    ports:
-    - name: AgentGateway
-      description: Agent 底层调用网关
-      kind: adapter
-      operations:
-      - name: run
-        description: 执行 Agent 并返回完整响应
-        inputs:
-        - type: Self
-          name: self
-        - type: string
-          name: system_prompt
-        - type: string
-          name: user_prompt
-        - type: string
-          container: list
-          name: tools
-        - type: ModelTier
-          optional: true
-          name: model_tier
-        output:
-          type: string
-      - name: run_stream
-        description: "流式执行 Agent 并返回文本块迭代器\n\n用于实时输出场景（如飞书消息流式更新）\n\nArgs:\n    system_prompt:\
-          \ 系统提示词\n    user_prompt: 用户输入\n    tools: 允许使用的工具列表\n    model_tier: 模型档位\
-          \ (PRO/FAST)\n\nYields:\n    文本块"
-        inputs:
-        - type: Self
-          name: self
-        - type: string
-          name: system_prompt
-        - type: string
-          name: user_prompt
-        - type: string
-          container: list
-          name: tools
-        - type: ModelTier
-          optional: true
-          name: model_tier
-        output:
-          type: Any
-          custom_type_string: AsyncIterator[str]
-    - name: AgentSessionRepository
-      kind: repository
-      aggregate: AgentSession
-      operations:
-      - name: save
-        inputs:
-        - type: Self
-          name: self
-        - type: AgentSession
-          name: session
-        output:
-          type: None
-      - name: delete
-        inputs:
-        - type: Self
-          name: self
-        - type: SessionId
-          name: agent_session_id
-        output:
-          type: None
-      - name: find_by_id
-        inputs:
-        - type: Self
-          name: self
-        - type: SessionId
-          name: agent_session_id
-        output:
-          type: AgentSession
-          optional: true
-  application:
-    use_cases:
-    - name: ExecuteAgentSession
-      kind: command
-      inputs:
-      - type: JobId
-        name: job_id
-      - type: string
-        name: system_prompt
-      - type: string
-        optional: true
-        name: requirement
-      - type: any
-        container: map
-        name: context_payload
-        default: dict
-      - type: ModelTier
-        optional: true
-        name: model_tier
-      outputs:
-      - type: SessionId
-        name: session_id
-      - type: boolean
-        name: is_success
-      - type: string
-        optional: true
-        name: output
-      description: 核心用例：接收已组装好的 system_prompt 与上下文，调用 AgentGateway 执行。这是 Orchestration
-        域中 ExecutionTriggerPort 的物理接收端。
-      dependencies:
-      - type: AgentGateway
-        name: agent_gateway
-      - type: AgentSessionRepository
-        name: session_repo
-  infrastructure:
-    implementations:
-    - name: SqlAlchemySessionRepository
-      implements: AgentSessionRepository
-      technology: sql
-      description: 使用 PostgreSQL 持久化 Agent 会话日志和状态
-      attributes:
-      - type: Any
-        custom_type_string: async_sessionmaker[AsyncSession]
-        name: session_factory
-    - name: ClaudeAgentGateway
-      implements: AgentGateway
-      technology: claude
-      description: 封装对 Claude Agent SDK 的调用，将工具和 Prompt 注入并执行
-      attributes:
-      - type: string
-        container: list
-        name: _stderr_output
-        default: list
-      private_methods:
-      - name: _stderr_callback
-        description: Capture stderr output for error reporting.
-        inputs:
-        - type: Self
-          name: self
-        - type: string
-          name: line
-        output:
-          type: None
-- name: Orchestration
-  domain:
-    aggregates:
     - name: DispatchJob
       description: 聚合根 — 记录一次从 TaskGraph 拉取任务并尝试执行的分发记录。
       base_types:
@@ -719,6 +607,16 @@ contexts:
         value: completed
       - name: FAILED
         value: failed
+    - name: SessionStatus
+      members:
+      - name: IDLE
+        value: idle
+      - name: RUNNING
+        value: running
+      - name: SUCCESS
+        value: success
+      - name: ERROR
+        value: error
     - name: TaskStatus
       description: The lifecycle state of a task.
       members:
@@ -800,14 +698,6 @@ contexts:
         name: status
       - type: string
         name: name
-    - name: SopContent
-      description: ''
-      attributes:
-      - type: string
-        name: system_prompt
-      - type: ModelTier
-        optional: true
-        name: model_tier
     - name: TriggerSessionResult
       description: 触发 Agent 会话的结果
       attributes:
@@ -822,7 +712,6 @@ contexts:
     ports:
     - name: DomainEventListenerPort
       description: 端口：领域事件监听器，以异步迭代器形式持续产出事件
-      kind: adapter
       operations:
       - name: listen
         description: 持续监听并逐个产出领域事件
@@ -840,8 +729,6 @@ contexts:
         output:
           type: None
     - name: DispatchJobRepository
-      kind: repository
-      aggregate: DispatchJob
       operations:
       - name: save
         inputs:
@@ -870,7 +757,6 @@ contexts:
           optional: true
     - name: ExecutionTriggerPort
       description: 定义一个明确的跨上下文调用端口，用于触发 Execution 域。
-      kind: adapter
       operations:
       - name: trigger_session
         inputs:
@@ -891,25 +777,8 @@ contexts:
           name: model_tier
         output:
           type: TriggerSessionResult
-    - name: SopRepository
-      description: SOP 仓储，根据 scope_level 和 architecture_layer 加载对应的操作规程
-      kind: repository
-      aggregate: Sop
-      operations:
-      - name: get_sop
-        inputs:
-        - type: Self
-          name: self
-        - type: string
-          name: scope_level
-        - type: string
-          optional: true
-          name: architecture_layer
-        output:
-          type: SopContent
     - name: TaskGraphQueryPort
       description: 防腐层：读取 TaskGraph 状态的只读接口，未来可替换为事件订阅(Pub/Sub)客户端。
-      kind: adapter
       operations:
       - name: fetch_ready_tasks
         inputs:
@@ -918,6 +787,64 @@ contexts:
         output:
           type: ReadyTaskDTO
           container: list
+    - name: AgentSessionRepository
+      operations:
+      - name: save
+        inputs:
+        - type: Self
+          name: self
+        - type: AgentSession
+          name: session
+        output:
+          type: None
+      - name: delete
+        inputs:
+        - type: Self
+          name: self
+        - type: SessionId
+          name: agent_session_id
+        output:
+          type: None
+      - name: find_by_id
+        inputs:
+        - type: Self
+          name: self
+        - type: SessionId
+          name: agent_session_id
+        output:
+          type: AgentSession
+          optional: true
+    domain_events:
+    - name: TaskReadyEvent
+      description: Event emitted when a task is ready to be claimed.
+      attributes:
+      - type: TaskId
+        name: task_id
+      - type: string
+        name: project_id
+      - type: ScopeLevel
+        name: scope_level
+      - type: string
+        optional: true
+        name: bounded_context
+      - type: ArchitectureLayer
+        optional: true
+        name: architecture_layer
+    - name: TaskReviewRequestedEvent
+      description: Event emitted when a task is submitted for review.
+      attributes:
+      - type: TaskId
+        name: task_id
+      - type: string
+        name: project_id
+      - type: ScopeLevel
+        name: scope_level
+      - type: string
+        optional: true
+        name: bounded_context
+      - type: ArchitectureLayer
+        optional: true
+        name: architecture_layer
   application:
     use_cases:
     - name: HandleDispatchableTaskEvent
@@ -938,8 +865,39 @@ contexts:
         name: job_repo
       - type: ExecutionTriggerPort
         name: execution_trigger
-      - type: SopRepository
-        name: sop_repo
+      - type: BlueprintRegistryPort
+        name: blueprint_registry
+    - name: ExecuteAgentSession
+      kind: command
+      inputs:
+      - type: JobId
+        name: job_id
+      - type: string
+        name: system_prompt
+      - type: string
+        optional: true
+        name: requirement
+      - type: any
+        container: map
+        name: context_payload
+        default: dict
+      - type: ModelTier
+        optional: true
+        name: model_tier
+      outputs:
+      - type: SessionId
+        name: session_id
+      - type: boolean
+        name: is_success
+      - type: string
+        optional: true
+        name: output
+      description: Orchestration 域的用例：管理 AgentSession 状态，并调用 Dispatching 域执行具体指令。
+      dependencies:
+      - type: HandleDispatchCommand
+        name: dispatch_handler
+      - type: AgentSessionRepository
+        name: session_repo
     - name: StartInitialWorkflow
       kind: command
       inputs:
@@ -948,14 +906,14 @@ contexts:
       outputs:
       - type: string
         name: initial_session_id
-      description: CLI 入口：接收用户自然语言指令，加载 sop_story_decompose，拉起一个 Agent Session 进行需求拆解。
+      description: CLI 入口：接收用户自然语言指令，加载蓝图，拉起一个 Agent Session 进行需求拆解。
       dependencies:
       - type: DispatchJobRepository
         name: job_repo
       - type: ExecutionTriggerPort
         name: execution_trigger
-      - type: SopRepository
-        name: sop_repo
+      - type: BlueprintRegistryPort
+        name: blueprint_registry
       - type: string
         name: project_id
     - name: RunEventLoopTick
@@ -963,7 +921,7 @@ contexts:
       outputs:
       - type: integer
         name: dispatched_count
-      description: 核心调度循环的一帧 (Tick)：查询 READY 任务 -> 加载对应 SOP -> 创建 DispatchJob -> 触发
+      description: 核心调度循环的一帧 (Tick)：查询 READY 任务 -> 加载对应蓝图 -> 创建 DispatchJob -> 触发
         Execution。
       dependencies:
       - type: TaskGraphQueryPort
@@ -972,8 +930,8 @@ contexts:
         name: job_repo
       - type: ExecutionTriggerPort
         name: execution_trigger
-      - type: SopRepository
-        name: sop_repo
+      - type: BlueprintRegistryPort
+        name: blueprint_registry
   infrastructure:
     implementations:
     - name: SqlAlchemyDispatchJobRepository
@@ -984,25 +942,14 @@ contexts:
       - type: Any
         custom_type_string: async_sessionmaker[AsyncSession]
         name: session_factory
-    - name: LocalFileSopRepository
-      implements: SopRepository
-      technology: local
-      description: 从本地文件系统（sops/ 目录）读取带有 Frontmatter 的 Markdown 格式 SOP，并整理为 system_prompt
+    - name: SqlAlchemySessionRepository
+      implements: AgentSessionRepository
+      technology: sql
+      description: 使用 PostgreSQL 持久化 Agent 会话日志和状态
       attributes:
-      - type: string
-        optional: true
-        name: base_dir
-      private_methods:
-      - name: _build_system_prompt
-        inputs:
-        - type: Self
-          name: self
-        - type: dict
-          name: metadata
-        - type: string
-          name: content
-        output:
-          type: string
+      - type: Any
+        custom_type_string: async_sessionmaker[AsyncSession]
+        name: session_factory
     - name: InProcessExecutionTrigger
       implements: ExecutionTriggerPort
       technology: in
@@ -1027,22 +974,73 @@ contexts:
       - type: asyncio.Event
         name: _stop_event
         default: asyncio.Event
-    - name: LocalFileSopRepository
-      implements: SopRepository
-      technology: local
-      description: 从本地文件系统（sops/ 目录）读取带有 Frontmatter 的 Markdown 格式 SOP，并整理为 system_prompt
+- name: Dispatching
+  domain:
+    ports:
+    - name: AgentExecutorPort
+      description: Agent 执行器接口：负责与底层模型 CLI 或 SDK 交互
+      operations:
+      - name: execute
+        description: 执行派发指令并返回回执
+        inputs:
+        - type: Self
+          name: self
+        - type: DispatchCommand
+          name: command
+        output:
+          type: ExecutionReceipt
+  application:
+    use_cases:
+    - name: HandleDispatchCommand
+      kind: query
+      inputs:
+      - type: string
+        name: system_prompt
+      - type: string
+        name: user_prompt
+      - type: string
+        name: session_id
+      - type: ModelTier
+        optional: true
+        name: model_tier
+      - type: string
+        container: list
+        name: tools
+        default: 'lambda: [''Read'', ''Edit'', ''Glob'']'
+      - type: any
+        container: map
+        name: context_payload
+        default: dict
+      outputs:
+      - type: DispatchStatus
+        name: status
+      - type: string
+        optional: true
+        name: output
+      - type: string
+        optional: true
+        name: fault
+      description: Dispatching 上下文的应用层用例：接收指令并驱动执行器
+      dependencies:
+      - type: AgentExecutorPort
+        name: executor
+  infrastructure:
+    implementations:
+    - name: ClaudeAgentExecutorAdapter
+      implements: AgentExecutorPort
+      technology: claude
+      description: 适配 Claude Agent SDK 的执行器
       attributes:
       - type: string
-        name: base_dir
-        default: 'lambda: str(Path(agent_engine.__file__).parent / ''sops'')'
+        container: list
+        name: _stderr_output
+        default: list
       private_methods:
-      - name: _build_system_prompt
-        description: 将 SOP Frontmatter 数据和 Markdown 内容整理为完整的 system_prompt 字符串
+      - name: _stderr_callback
         inputs:
-        - type: dict
-          name: metadata
+        - type: Self
+          name: self
         - type: string
-          name: content
+          name: line
         output:
-          type: string
-- name: Sops
+          type: None
