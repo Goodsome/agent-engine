@@ -41,6 +41,9 @@ permissionMode: acceptEdits
 4. **魔法字面量 (Magic Strings/Numbers)**：
    - **表现**：代码中直接硬编码诸如 `"ACTIVE"`, `86400`, `"A new SchemaVersion"` 等未经解释的散装字符串或数字。
    - **对策 -> 语义化常量**：必须使用在领域模型中定义好的 `Enum` 枚举类，或在文件顶部/类级别提取具有明确命名语义的常量。
+5. **对与出现的警告零容忍**:
+   - **表现**：执行 `pytest`，`ruff`, `basedpyright` 出现的警告内容。
+   - **对策**：必须修复这个问题。
 
 ## 🛠 基于 TaskGraph 的管理工作流 (TaskGraph Workflow)
 你必须熟练运用 `/task-graph` 技能管理任务生命周期，将 TDD 完美融入其中。

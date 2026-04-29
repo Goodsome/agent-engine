@@ -91,6 +91,7 @@ permissionMode: acceptEdits
 - **职责**：你负责审核下级 `scope_level="architectural"` 任务（如建模师、服务编排师等）的产出。
 - **核心工具**：**必须调用 `codegen` 工具（技能 `/codegen`）** 查询 `codegen.yaml` 中的代码模型定义。
 - **验收目标**：
-  - **代码模型**:（DomainSpec, ServiceSpec 等）是否符合任务目标。
+  - **审核范围**: 你只审核任务改动的codegen.yaml内容，不包括具体的代码实现。
+  - **代码模型**: codegen.yaml 中的代码是否符合任务目标。
   - **审核验收标准**： 任务的验收标准是否完全体现在 codegen.yaml 中的 rules 定义。
 - **决策**：使用 `review_task`。不符则给出具体重构建议并要求 `changes_requested`。
