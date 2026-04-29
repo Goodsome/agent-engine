@@ -1,7 +1,9 @@
 import logging
 from dataclasses import dataclass, field
 from claude_agent_sdk import query, ClaudeAgentOptions
-from agent_engine.dispatching.domain.models import DispatchCommand, ExecutionReceipt, DispatchStatus
+from agent_engine.dispatching.domain.enums import DispatchStatus
+from agent_engine.dispatching.domain.value_objects.dispatch_command import DispatchCommand
+from agent_engine.dispatching.domain.value_objects.execution_receipt import ExecutionReceipt
 from agent_engine.dispatching.domain.ports.executor import AgentExecutorPort
 from agent_engine.shared.domain.enums import ModelTier
 

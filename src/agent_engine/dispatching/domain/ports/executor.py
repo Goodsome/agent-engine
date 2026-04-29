@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from agent_engine.dispatching.domain.models import DispatchCommand, ExecutionReceipt
+from agent_engine.dispatching.domain.value_objects.dispatch_command import DispatchCommand
+from agent_engine.dispatching.domain.value_objects.execution_receipt import ExecutionReceipt
 
 
 class AgentExecutorPort(ABC):

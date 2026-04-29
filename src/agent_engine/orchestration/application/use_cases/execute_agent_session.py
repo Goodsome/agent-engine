@@ -7,7 +7,8 @@ from agent_engine.orchestration.domain.aggregates.agent_session import AgentSess
 from agent_engine.orchestration.domain.enums import SessionStatus
 from agent_engine.orchestration.domain.ports.agent_session_repository import AgentSessionRepository
 from agent_engine.dispatching.application.use_cases.handle_dispatch_command import HandleDispatchCommand
-from agent_engine.dispatching.domain.models import DispatchCommand, DispatchStatus
+from agent_engine.dispatching.domain.enums import DispatchStatus
+from agent_engine.dispatching.domain.value_objects.dispatch_command import DispatchCommand
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.shared.domain.value_objects.job_id import JobId
 from agent_engine.shared.domain.enums import ModelTier
