@@ -27,7 +27,6 @@ class ApplicationContainer(DeclarativeContainer):
     # Wiring configuration - add packages where dependencies need to be injected
     wiring_config: WiringConfiguration = WiringConfiguration(
         packages=[
-            "agent_engine.orchestration.interfaces",
             "agent_engine.dispatching.interfaces",
             "agent_engine.integration.interfaces",
         ]

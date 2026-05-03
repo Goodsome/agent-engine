@@ -12,7 +12,6 @@ def create_app():
     container = create_container(init_resources=False)
     container.wire(modules=[
         "agent_engine.dispatching.interfaces.cli",
-        "agent_engine.orchestration.interfaces.cli",
     ])
     
     @app.callback()
