@@ -4,10 +4,6 @@ from typing import Annotated, cast
 from rich.console import Console
 from dependency_injector.wiring import Provide, inject
 
-from agent_engine.orchestration.application.use_cases.run_event_loop_tick import (
-    RunEventLoopTick,
-    RunEventLoopTickCommand,
-)
 from agent_engine.orchestration.application.use_cases.start_initial_workflow import (
     StartInitialWorkflow,
     StartInitialWorkflowCommand,
@@ -17,19 +13,6 @@ from agent_engine.orchestration.interfaces.event_listener import EventListenerRu
 from dependency_injector.containers import DynamicContainer
 
 console = Console()
-
-@inject
-async def _do_tick(
-    run_tick_use_case: RunEventLoopTick = Provide["orchestration_container.run_event_loop_tick"],
-):
-    cmd = RunEventLoopTickCommand()
-    return await run_tick_use_case.execute(cmd)
-
-def tick():
-    """Run a single tick of the event loop."""
-    console.print("Running event loop tick...")
-    result = asyncio.run(_do_tick())
-    console.print(f"Tick completed. Dispatched [bold green]{result.dispatched_count}[/bold green] jobs.")
 
 @inject
 async def _do_start_workflow(

@@ -30,7 +30,6 @@ uv run basedpyright
 # CLI commands
 uv run agent-engine --help
 uv run agent-engine start-workflow "Build a REST API"
-uv run agent-engine tick          # Single event loop tick
 uv run agent-engine listen        # Long-running event listener
 uv run agent-engine execute-session --help
 ```
@@ -46,7 +45,7 @@ The system follows DDD with two bounded contexts, each with its own container:
 - Handles domain events (TaskReadyEvent, TaskReviewRequestedEvent)
 - Uses PostgreSQL LISTEN/NOTIFY for event-driven communication
 - Key aggregates: `DispatchJob`
-- Key use cases: `HandleDispatchableTaskEvent`, `StartInitialWorkflow`, `RunEventLoopTick`
+- Key use cases: `HandleDispatchableTaskEvent`, `StartInitialWorkflow`
 
 **2. Execution Context** (`src/agent_engine/execution/`)
 - Manages AI agent sessions via `ClaudeAgentGateway`

@@ -5,9 +5,8 @@ Aggregates all bounded context containers and provides shared dependencies.
 """
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from dependency_injector import containers, providers
-from dependency_injector.containers import WiringConfiguration
-from dependency_injector.providers import Configuration, Container, Singleton
+from dependency_injector.containers import WiringConfiguration, DeclarativeContainer
+from dependency_injector.providers import Configuration, Container, Singleton, Factory, Resource
 from agent_engine.agent_registry.container import Container as AgentRegistryContainer
 from agent_engine.dispatching.container import Container as DispatchingContainer
 from agent_engine.orchestration.container import Container as OrchestrationContainer
@@ -16,16 +15,17 @@ from agent_engine.shared.infrastructure.database import (
     init_database,
     Database,
 )
+from event_hub import EventHub, RedisStreamSubscriber
 
 def _get_session_factory(db: Database) -> async_sessionmaker[AsyncSession]:
     return db.session_factory
 
 
-class ApplicationContainer(containers.DeclarativeContainer):
+class ApplicationContainer(DeclarativeContainer):
     """Root application container that composes all context containers."""
 
     # Wiring configuration - add packages where dependencies need to be injected
-    wiring_config: WiringConfiguration = containers.WiringConfiguration(
+    wiring_config: WiringConfiguration = WiringConfiguration(
         packages=[
             "agent_engine.orchestration.interfaces",
             "agent_engine.dispatching.interfaces",
@@ -34,34 +34,44 @@ class ApplicationContainer(containers.DeclarativeContainer):
     )
 
     # 顶层全局配置树
-    config: Configuration = providers.Configuration()
+    config: Configuration = Configuration()
+
+    subscriber: Factory[RedisStreamSubscriber] = Factory(
+        RedisStreamSubscriber,
+        service_name="agent-engine"
+    )
+
+    event_hub: Singleton[EventHub] = Singleton(
+        EventHub,
+        subscriber=subscriber,
+    )
 
     # 初始化共享的数据库资源（包含生命周期管理）
-    db: providers.Resource[Database] = providers.Resource(
+    db: Resource[Database] = Resource(
         init_database,
         connection_string=config.DATABASE_URL,
     )
 
     # 数据库会话工厂
-    session_factory: Singleton[async_sessionmaker[AsyncSession]] = providers.Singleton(
+    session_factory: Singleton[async_sessionmaker[AsyncSession]] = Singleton(
         _get_session_factory,
         db=db,
     )
 
     # 组装 Agent Registry 限界上下文容器
-    agent_registry_container: Container[AgentRegistryContainer] = providers.Container(
+    agent_registry_container: Container[AgentRegistryContainer] = Container(
         AgentRegistryContainer,
         config=config,
     )
 
     # 组装 Dispatching 限界上下文容器
-    dispatching_container: Container[DispatchingContainer] = providers.Container(
+    dispatching_container: Container[DispatchingContainer] = Container(
         DispatchingContainer,
         config=config,
     )
 
     # 组装 Orchestration 限界上下文容器
-    orchestration_container: Container[OrchestrationContainer] = providers.Container(
+    orchestration_container: Container[OrchestrationContainer] = Container(
         OrchestrationContainer,
         config=config,
         session_factory=session_factory,
@@ -70,7 +80,7 @@ class ApplicationContainer(containers.DeclarativeContainer):
     )
 
     # 组装 Integration 限界上下文容器
-    integration_container: Container[IntegrationContainer] = providers.Container(
+    integration_container: Container[IntegrationContainer] = Container(
         IntegrationContainer,
         config=config,
         session_factory=session_factory,

@@ -1,9 +1,3 @@
-from agent_engine.orchestration.application.use_cases.run_event_loop_tick import (
-    RunEventLoopTick,
-)
-from agent_engine.orchestration.infrastructure.adapters.task_graph_adapter import (
-    TaskGraphAdapter,
-)
 from agent_engine.orchestration.application.use_cases.start_initial_workflow import (
     StartInitialWorkflow,
 )
@@ -39,8 +33,6 @@ class Container(DeclarativeContainer):
     handle_dispatch_command = providers.Dependency()
     blueprint_registry = providers.Dependency()
 
-    task_graph_adapter = Factory(TaskGraphAdapter)
-    
     sql_alchemy_dispatch_job_repository = Factory(
         SqlAlchemyDispatchJobRepository,
         session_factory=session_factory,
@@ -68,13 +60,6 @@ class Container(DeclarativeContainer):
         execution_trigger=in_process_execution_trigger,
         blueprint_registry=blueprint_registry,
         project_id=config.PROJECT_ID,
-    )
-    run_event_loop_tick = Factory(
-        RunEventLoopTick,
-        task_query_port=task_graph_adapter,
-        job_repo=sql_alchemy_dispatch_job_repository,
-        execution_trigger=in_process_execution_trigger,
-        blueprint_registry=blueprint_registry,
     )
     pg_notify_event_listener = Factory(
         PgNotifyEventListener,

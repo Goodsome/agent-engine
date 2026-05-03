@@ -687,17 +687,6 @@ contexts:
       - name: ON_FAILURE
         value: on_failure
     value_objects:
-    - name: ReadyTaskDTO
-      description: 防腐层数据契约：从 TaskGraph 读取的、随时可被派发的任务快照
-      attributes:
-      - type: TaskId
-        name: task_id
-      - type: string
-        name: planning_level
-      - type: string
-        name: status
-      - type: string
-        name: name
     - name: TriggerSessionResult
       description: 触发 Agent 会话的结果
       attributes:
@@ -777,16 +766,6 @@ contexts:
           name: model_tier
         output:
           type: TriggerSessionResult
-    - name: TaskGraphQueryPort
-      description: 防腐层：读取 TaskGraph 状态的只读接口，未来可替换为事件订阅(Pub/Sub)客户端。
-      operations:
-      - name: fetch_ready_tasks
-        inputs:
-        - type: Self
-          name: self
-        output:
-          type: ReadyTaskDTO
-          container: list
     - name: AgentSessionRepository
       operations:
       - name: save
@@ -916,22 +895,6 @@ contexts:
         name: blueprint_registry
       - type: string
         name: project_id
-    - name: RunEventLoopTick
-      kind: command
-      outputs:
-      - type: integer
-        name: dispatched_count
-      description: 核心调度循环的一帧 (Tick)：查询 READY 任务 -> 加载对应蓝图 -> 创建 DispatchJob -> 触发
-        Execution。
-      dependencies:
-      - type: TaskGraphQueryPort
-        name: task_query_port
-      - type: DispatchJobRepository
-        name: job_repo
-      - type: ExecutionTriggerPort
-        name: execution_trigger
-      - type: BlueprintRegistryPort
-        name: blueprint_registry
   infrastructure:
     implementations:
     - name: SqlAlchemyDispatchJobRepository
@@ -945,7 +908,7 @@ contexts:
     - name: SqlAlchemySessionRepository
       implements: AgentSessionRepository
       technology: sql
-      description: 使用 PostgreSQL 持久化 Agent 会话日志和状态
+      description: 使用 PostgreSQL 持久化 Agent 会话日志 and 状态
       attributes:
       - type: Any
         custom_type_string: async_sessionmaker[AsyncSession]
@@ -957,10 +920,6 @@ contexts:
       attributes:
       - type: ExecuteAgentSession
         name: execute_agent_session
-    - name: TaskGraphAdapter
-      implements: TaskGraphQueryPort
-      technology: task
-      description: 通过 TaskGraph 服务获取 Ready 任务
     - name: PgNotifyEventListener
       implements: DomainEventListenerPort
       technology: pg
