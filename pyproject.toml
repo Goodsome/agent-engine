@@ -13,6 +13,7 @@ dependencies = [
     "python-frontmatter>=1.1.0",
     "sqlalchemy[asyncio]>=2.0.48",
     "typer>=0.24.1",
+    "event-hub",
 ]
 
 [project.scripts]
@@ -40,3 +41,6 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.basedpyright]
 extraPaths = ["./src"]
+
+[tool.uv.sources]
+event-hub = { path = "../event-hub", editable = true }
