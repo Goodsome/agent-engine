@@ -1,6 +1,3 @@
-from agent_engine.orchestration.application.use_cases.start_initial_workflow import (
-    StartInitialWorkflow,
-)
 from agent_engine.orchestration.infrastructure.repositories.sql_alchemy_dispatch_job_repository import (
     SqlAlchemyDispatchJobRepository,
 )
@@ -54,13 +51,6 @@ class Container(DeclarativeContainer):
         execute_agent_session=execute_agent_session,
     )
 
-    start_initial_workflow = Factory(
-        StartInitialWorkflow,
-        job_repo=sql_alchemy_dispatch_job_repository,
-        execution_trigger=in_process_execution_trigger,
-        blueprint_registry=blueprint_registry,
-        project_id=config.PROJECT_ID,
-    )
     pg_notify_event_listener = Factory(
         PgNotifyEventListener,
         dsn=config.TASK_GRAPH_DATABASE_URL,

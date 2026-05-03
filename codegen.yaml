@@ -877,24 +877,6 @@ contexts:
         name: dispatch_handler
       - type: AgentSessionRepository
         name: session_repo
-    - name: StartInitialWorkflow
-      kind: command
-      inputs:
-      - type: string
-        name: raw_requirement
-      outputs:
-      - type: string
-        name: initial_session_id
-      description: CLI 入口：接收用户自然语言指令，加载蓝图，拉起一个 Agent Session 进行需求拆解。
-      dependencies:
-      - type: DispatchJobRepository
-        name: job_repo
-      - type: ExecutionTriggerPort
-        name: execution_trigger
-      - type: BlueprintRegistryPort
-        name: blueprint_registry
-      - type: string
-        name: project_id
   infrastructure:
     implementations:
     - name: SqlAlchemyDispatchJobRepository

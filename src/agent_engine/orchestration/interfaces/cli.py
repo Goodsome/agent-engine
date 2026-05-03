@@ -4,31 +4,10 @@ from typing import Annotated, cast
 from rich.console import Console
 from dependency_injector.wiring import Provide, inject
 
-from agent_engine.orchestration.application.use_cases.start_initial_workflow import (
-    StartInitialWorkflow,
-    StartInitialWorkflowCommand,
-)
-
 from agent_engine.orchestration.interfaces.event_listener import EventListenerRunner
 from dependency_injector.containers import DynamicContainer
 
 console = Console()
-
-@inject
-async def _do_start_workflow(
-    cmd: StartInitialWorkflowCommand,
-    start_workflow_use_case: StartInitialWorkflow = Provide["orchestration_container.start_initial_workflow"],
-):
-    return await start_workflow_use_case.execute(cmd)
-
-def start_workflow(
-    requirement: Annotated[str, typer.Argument(..., help="The raw requirement to start the workflow")],
-):
-    """Start an initial workflow with a requirement."""
-    console.print(f"Starting workflow with requirement: [green]{requirement}[/green]")
-    cmd = StartInitialWorkflowCommand(raw_requirement=requirement)
-    result = asyncio.run(_do_start_workflow(cmd))
-    console.print(f"Workflow started. Initial Session ID: [bold blue]{result.initial_session_id}[/bold blue]")
 
 
 async def _do_listen(
