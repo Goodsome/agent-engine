@@ -1,9 +1,10 @@
 from typing import Any
 from pydantic import BaseModel, Field
+from dataclasses import dataclass
+
 from agent_engine.dispatching.domain.ports.executor import AgentExecutorPort
 from agent_engine.dispatching.domain.enums import DispatchStatus
 from agent_engine.shared.domain.enums import ModelTier
-from dataclasses import dataclass
 
 
 class ExecuteSessionCommand(BaseModel):

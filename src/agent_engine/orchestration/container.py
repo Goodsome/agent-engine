@@ -19,6 +19,7 @@ from agent_engine.orchestration.infrastructure.adapters.pg_notify_event_listener
 from agent_engine.orchestration.application.use_cases.handle_dispatchable_task_event import (
     HandleDispatchableTaskEvent,
 )
+from agent_engine.orchestration.application.event_handlers.on_task_ready import OnTaskReady
 from agent_engine.orchestration.interfaces.event_listener import EventListenerRunner
 
 
@@ -27,7 +28,7 @@ class Container(DeclarativeContainer):
     session_factory = providers.Dependency()
     
     # 外部依赖
-    handle_dispatch_command = providers.Dependency()
+    execute_session = providers.Dependency()
     blueprint_registry = providers.Dependency()
 
     sql_alchemy_dispatch_job_repository = Factory(
@@ -42,7 +43,7 @@ class Container(DeclarativeContainer):
     
     execute_agent_session = Factory(
         ExecuteAgentSession,
-        dispatch_handler=handle_dispatch_command,
+        dispatch_handler=execute_session,
         session_repo=sql_alchemy_session_repository,
     )
 
@@ -61,6 +62,10 @@ class Container(DeclarativeContainer):
         job_repo=sql_alchemy_dispatch_job_repository,
         execution_trigger=in_process_execution_trigger,
         blueprint_registry=blueprint_registry,
+    )
+
+    on_task_ready = Factory(
+        OnTaskReady,
     )
     event_listener_runner = Factory(
         EventListenerRunner,

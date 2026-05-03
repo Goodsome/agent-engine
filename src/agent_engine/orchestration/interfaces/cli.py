@@ -1,11 +1,10 @@
 import asyncio
 import typer
-from typing import Annotated, cast
+from typing import cast
 from rich.console import Console
-from dependency_injector.wiring import Provide, inject
 
-from agent_engine.orchestration.interfaces.event_listener import EventListenerRunner
 from dependency_injector.containers import DynamicContainer
+from agent_engine.bootstrap.subscriptions import register_event_subscriptions
 
 console = Console()
 
@@ -17,14 +16,23 @@ async def _do_listen(
     assert _init is not None
     await _init
     
+    await register_event_subscriptions(container) # type: ignore
+    
+    event_hub = container.event_hub()
+    
     try:
-        orchestration_container = container.orchestration_container
-        runner: EventListenerRunner = await orchestration_container.event_listener_runner()
-        
-        await runner.run()
+        console.print("Starting EventHub subscriber...")
+        await event_hub.start()
+        await event_hub.run_forever()
+    except asyncio.CancelledError:
+        console.print("EventHub subscriber cancelled.")
     except Exception as e:
+        console.print(f"Error in EventHub subscriber: {e}")
         raise e
     finally:
+        console.print("Stopping EventHub subscriber...")
+        await event_hub.stop()
+        
         _shutdown = container.shutdown_resources()
         if _shutdown is not None:
             await _shutdown
