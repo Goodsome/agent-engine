@@ -436,6 +436,11 @@ contexts:
           name: data
         output:
           type: any
+    - name: ProjectId
+      description: ''
+      attributes:
+      - type: string
+        name: value
     - name: JobId
       description: 调度派发任务的唯一标识
       attributes:
@@ -522,143 +527,49 @@ contexts:
       attributes:
       - type: SessionId
         name: id
-      - type: JobId
-        name: job_id
-      - type: dict
-        name: context_payload
+      - type: TaskId
+        name: task_id
+      - type: ProjectId
+        name: project_id
       - type: SessionStatus
         name: status
       - type: string
-        optional: true
-        name: final_output
+        container: map
+        name: context_payload
       - type: string
-        optional: true
-        name: error_message
-      behaviors:
-      - name: start
-        inputs:
-        - type: Self
-          name: self
-        output:
-          type: None
-      - name: finish_with_success
-        inputs:
-        - type: Self
-          name: self
-        - type: string
-          name: output
-        output:
-          type: None
-      - name: finish_with_error
-        inputs:
-        - type: Self
-          name: self
-        - type: string
-          name: error
-        output:
-          type: None
+        name: system_prompt
+        default: ''
+      - type: Message
+        container: list
+        name: messages
+        default: list
     enums:
-    - name: JobStatus
+    - name: SessionLifeCycle
       members:
-      - name: PENDING
-        value: pending
-      - name: RUNNING
-        value: running
-      - name: COMPLETED
-        value: completed
-      - name: FAILED
-        value: failed
+      - name: OPEN
+        value: open
     - name: SessionStatus
       members:
       - name: IDLE
         value: idle
-      - name: RUNNING
-        value: running
-      - name: SUCCESS
-        value: success
-      - name: ERROR
-        value: error
-    - name: TaskStatus
-      description: The lifecycle state of a task.
+      - name: PROCESSING
+        value: processing
+    - name: MessageRole
       members:
-      - name: PENDING
-        value: pending
-      - name: BLOCKED
-        value: blocked
-      - name: READY
-        value: ready
-      - name: IN_PROGRESS
-        value: in_progress
-      - name: REVIEW
-        value: review
-      - name: DONE
-        value: done
-      - name: CHANGES_REQUESTED
-        value: changes_requested
-      - name: SKIPPED
-        value: skipped
-      - name: DISCARDED
-        value: discarded
-    - name: PlanningLevel
-      description: Defines the uncertainty and granularity of the task.
-      members:
-      - name: INITIATIVE
-        value: initiative
-      - name: MILESTONE
-        value: milestone
-      - name: ARCHITECTURAL
-        value: architectural
-      - name: FEATURE
-        value: feature
-      - name: ATOMIC
-        value: atomic
-    - name: ScopeLevel
-      description: Defines the delegation level of the task, mapping directly to Agent
-        roles and context boundaries.
-      members:
-      - name: PROJECT
-        value: project
-      - name: CONTEXT
-        value: context
-      - name: ARCHITECTURAL
-        value: architectural
-      - name: ATOMIC
-        value: atomic
-    - name: ArchitectureLayer
-      description: DDD architecture layers.
-      members:
-      - name: DOMAIN
-        value: domain
-      - name: APPLICATION
-        value: application
-      - name: INFRASTRUCTURE
-        value: infrastructure
-      - name: INTERFACES
-        value: interfaces
-      - name: CROSS_CUTTING
-        value: cross_cutting
-      - name: NONE
-        value: none
-    - name: RecurrenceType
-      members:
-      - name: ON_SUCCESS
-        value: on_success
-      - name: CRON
-        value: cron
-      - name: ON_FAILURE
-        value: on_failure
+      - name: SYSTEM
+        value: system
+      - name: USER
+        value: user
+      - name: ASSISTANT
+        value: assistant
     value_objects:
-    - name: TriggerSessionResult
-      description: 触发 Agent 会话的结果
+    - name: Message
+      description: ''
       attributes:
-      - type: SessionId
-        name: session_id
+      - type: MessageRole
+        name: role
       - type: string
-        optional: true
-        name: output
-      - type: boolean
-        name: is_success
-        default: true
+        name: content
     ports:
     - name: AgentSessionRepository
       operations:
@@ -684,6 +595,15 @@ contexts:
           name: self
         - type: SessionId
           name: agent_session_id
+        output:
+          type: AgentSession
+          optional: true
+      - name: find_by_task_id
+        inputs:
+        - type: Self
+          name: self
+        - type: TaskId
+          name: task_id
         output:
           type: AgentSession
           optional: true
