@@ -7,19 +7,20 @@ import typer
 from rich.console import Console
 from dependency_injector.wiring import Provide, inject
 
-from agent_engine.orchestration.application.use_cases.execute_agent_session import (
-    ExecuteAgentSession,
-    ExecuteAgentSessionCommand,
+from agent_engine.dispatching.application.use_cases.execute_session import (
+    ExecuteSession,
+    ExecuteSessionCommand,
 )
-from agent_engine.shared.domain.value_objects.job_id import JobId
+from agent_engine.dispatching.domain.enums import DispatchStatus
+from agent_engine.shared.domain.enums import ModelTier
 
 app = typer.Typer(help="Execution Context Commands")
 console = Console()
 
 @inject
 async def _do_execute_session(
-    cmd: ExecuteAgentSessionCommand,
-    execute_use_case: ExecuteAgentSession = Provide["orchestration_container.execute_agent_session"],
+    cmd: ExecuteSessionCommand,
+    execute_use_case: ExecuteSession = Provide["dispatching_container.execute_session"],
 ):
     return await execute_use_case.execute(cmd)
 
@@ -27,6 +28,8 @@ def execute_session(
     system_prompt: str = typer.Argument(..., help="The system prompt for the agent"),
     requirement: str = typer.Option(None, "--requirement", "-r", help="The user requirement"),
     context_payload: str = typer.Option("{}", "--context", "-c", help="JSON string of context payload"),
+    session_id: str = typer.Option(None, "--session-id", "-s", help="The session ID"),
+    model_tier: ModelTier = typer.Option(ModelTier.FAST, "--tier", "-t", help="Model tier to use"),
 ):
     """Execute an agent session manually."""
     try:
@@ -35,14 +38,19 @@ def execute_session(
         console.print("[bold red]Error:[/bold red] context_payload must be a valid JSON string.")
         raise typer.Exit(code=1)
 
-    cmd = ExecuteAgentSessionCommand(
-        job_id=JobId(value=uuid.uuid4()),
+    effective_session_id = session_id or str(uuid.uuid4())
+
+    cmd = ExecuteSessionCommand(
+        session_id=effective_session_id,
         system_prompt=system_prompt,
-        requirement=requirement,
+        user_prompt=requirement or "",
         context_payload=payload,
+        model_tier=model_tier,
     )
 
-    console.print(f"Executing session with system prompt: [green]{system_prompt}[/green]")
+    console.print(f"Executing session [bold blue]{effective_session_id}[/bold blue]")
+    console.print(f"System prompt: [green]{system_prompt}[/green]")
+    console.print(f"User prompt: [cyan]{cmd.user_prompt}[/cyan]")
 
     try:
         result = asyncio.run(_do_execute_session(cmd))
@@ -51,9 +59,9 @@ def execute_session(
         console.print(traceback.format_exc())
         raise typer.Exit(code=1)
 
-    if result.is_success:
-        console.print(f"[bold green]Success![/bold green] Session ID: {result.session_id.value}")
+    if result.status == DispatchStatus.SUCCESS:
+        console.print(f"[bold green]Success![/bold green] Session ID: {effective_session_id}")
         console.print(f"Output: {result.output}")
     else:
-        console.print(f"[bold red]Failed![/bold red] Session ID: {result.session_id.value}")
-        console.print(f"Error: {result.output}")
+        console.print(f"[bold red]Failed![/bold red] Status: {result.status.value}")
+        console.print(f"Error: {result.fault}")

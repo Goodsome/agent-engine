@@ -16,7 +16,7 @@ class Container(DeclarativeContainer):
 
     config = providers.Configuration()
     session_factory = providers.Dependency()
-    execution_trigger = providers.Dependency()
+    execute_session = providers.Dependency()
 
     # Feishu 客户端适配器
     lark_ws_client = Factory(
@@ -35,6 +35,6 @@ class Container(DeclarativeContainer):
     handle_feishu_message = Factory(
         HandleFeishuMessage,
         feishu_client=lark_ws_client,
-        execution_trigger=execution_trigger,
+        execute_session=execute_session,
         context_repo=sql_alchemy_conversation_context_repository,
     )

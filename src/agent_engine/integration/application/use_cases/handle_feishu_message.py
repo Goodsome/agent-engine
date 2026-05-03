@@ -1,17 +1,20 @@
 import json
-import uuid
 from dataclasses import dataclass
+from agent_engine.integration.domain.aggregates.conversation_context import (
+    ConversationContext,
+)
 from agent_engine.integration.domain.ports.conversation_context_repository import (
     ConversationContextRepository,
 )
 from agent_engine.integration.domain.value_objects.feishu_message_payload import (
     FeishuMessagePayload,
 )
-from agent_engine.orchestration.domain.ports.execution_trigger_port import (
-    ExecutionTriggerPort,
+from agent_engine.dispatching.application.use_cases.execute_session import (
+    ExecuteSession,
+    ExecuteSessionCommand,
 )
+from agent_engine.dispatching.domain.enums import DispatchStatus
 from agent_engine.shared.domain.value_objects.session_id import SessionId
-from agent_engine.shared.domain.value_objects.job_id import JobId
 from agent_engine.integration.domain.ports.feishu_client_port import FeishuClientPort
 from pydantic import BaseModel
 from agent_engine.integration.domain.value_objects.feishu_message_id import (
@@ -35,14 +38,13 @@ class HandleFeishuMessage:
 
     流程:
     1. 获取或创建会话上下文
-    2. 生成虚拟 JobId (防腐层)
-    3. 触发 Agent 执行
-    4. 根据聊天类型路由回复 (P2P 发送新消息, GROUP 回复消息)
-    5. 更新会话上下文
+    2. 触发 Agent 执行 (直接调用 Dispatching 域)
+    3. 根据聊天类型路由回复 (P2P 发送新消息, GROUP 回复消息)
+    4. 更新会话上下文
     """
 
     feishu_client: FeishuClientPort
-    execution_trigger: ExecutionTriggerPort
+    execute_session: ExecuteSession
     context_repo: ConversationContextRepository
 
     async def execute(self, cmd: HandleFeishuMessageCommand) -> HandleFeishuMessageResult:
@@ -51,34 +53,33 @@ class HandleFeishuMessage:
         # 1. 获取或创建会话上下文
         context = await self.context_repo.find_by_chat_id(payload.chat_id)
         if context is None:
-            from agent_engine.integration.domain.aggregates.conversation_context import (
-                ConversationContext,
-            )
             context = ConversationContext.create(payload.chat_id)
 
         # 添加用户消息到历史
         context.add_message("user", payload.content)
 
-        # 2. 生成虚拟 JobId (防腐层 - 标识来自即时通讯渠道)
-        synthetic_job_id = JobId.create()
-
-        # 3. 构建 system prompt (包含对话历史)
+        # 2. 构建 system prompt (包含对话历史)
         system_prompt = self._build_system_prompt(context)
 
+        # 3. 准备 SessionId
+        # 如果当前上下文已有 session_id 则沿用，否则新建
+        session_id = context.current_session_id or SessionId.create()
+
         # 4. 触发 Agent 执行
-        result = await self.execution_trigger.trigger_session(
-            job_id=synthetic_job_id,
+        execute_cmd = ExecuteSessionCommand(
             system_prompt=system_prompt,
-            requirement=payload.content,
+            user_prompt=payload.content,
+            session_id=str(session_id.value),
             context_payload={
                 "chat_id": str(payload.chat_id),
                 "sender_id": payload.sender_id,
                 "source": "feishu",
             },
         )
+        result = await self.execute_session.execute(execute_cmd)
 
         # 5. 获取 Agent 响应
-        if result.is_success and result.output:
+        if result.status == DispatchStatus.SUCCESS and result.output:
             response_text = result.output
         else:
             response_text = "抱歉，处理您的请求时出现问题，请稍后重试。"
@@ -98,15 +99,15 @@ class HandleFeishuMessage:
             )
 
         # 7. 更新会话上下文
-        context.set_session(result.session_id)
+        context.set_session(session_id)
         await self.context_repo.save(context)
 
         return HandleFeishuMessageResult(
             reply_message_id=reply_id,
-            session_id=result.session_id,
+            session_id=session_id,
         )
 
-    def _build_system_prompt(self, context) -> str:
+    def _build_system_prompt(self, context: ConversationContext) -> str:
         """构建包含对话历史的 system prompt"""
         history_lines = []
         for msg in context.messages:

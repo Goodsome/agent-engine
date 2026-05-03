@@ -1,6 +1,6 @@
 import typer
 from agent_engine.bootstrap import create_container, setup_cli_logging
-from agent_engine.dispatching.interfaces.cli import execute_session
+from agent_engine.dispatching.interfaces.cli.execute_session import execute_session
 from agent_engine.entrypoints.listen import listen
 
 def create_app():
@@ -11,7 +11,7 @@ def create_app():
     )
     container = create_container(init_resources=False)
     container.wire(modules=[
-        "agent_engine.dispatching.interfaces.cli",
+        "agent_engine.dispatching.interfaces.cli.execute_session",
     ])
     
     @app.callback()

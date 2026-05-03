@@ -5,7 +5,6 @@ Provides command-line interface for Feishu integration:
 """
 
 import asyncio
-import typer
 from rich.console import Console
 from dependency_injector.wiring import Provide, inject
 

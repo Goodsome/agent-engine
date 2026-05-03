@@ -83,7 +83,7 @@ class ApplicationContainer(DeclarativeContainer):
         IntegrationContainer,
         config=config,
         session_factory=session_factory,
-        execution_trigger=orchestration_container.in_process_execution_trigger,
+        execute_session=dispatching_container.execute_session,
     )
 
 

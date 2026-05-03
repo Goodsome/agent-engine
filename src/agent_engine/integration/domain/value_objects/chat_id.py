@@ -1,5 +1,4 @@
 from agent_engine.shared.models import ValueObject
-from typing import Any
 
 
 class ChatId(ValueObject):

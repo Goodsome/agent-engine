@@ -4,9 +4,6 @@ from agent_engine.orchestration.infrastructure.repositories.sql_alchemy_dispatch
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector import providers
 from dependency_injector.providers import Factory
-from agent_engine.orchestration.infrastructure.adapters.in_process_execution_trigger import (
-    InProcessExecutionTrigger,
-)
 from agent_engine.orchestration.infrastructure.repositories.sql_alchemy_session_repository import (
     SqlAlchemySessionRepository,
 )
@@ -38,11 +35,6 @@ class Container(DeclarativeContainer):
         ExecuteAgentSession,
         dispatch_handler=execute_session,
         session_repo=sql_alchemy_session_repository,
-    )
-
-    in_process_execution_trigger = Factory(
-        InProcessExecutionTrigger,
-        execute_agent_session=execute_agent_session,
     )
 
     on_task_ready = Factory(
