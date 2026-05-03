@@ -1,8 +1,8 @@
 import logging
+from typing import Any
 from dataclasses import dataclass, field
 from claude_agent_sdk import query, ClaudeAgentOptions
 from agent_engine.dispatching.domain.enums import DispatchStatus
-from agent_engine.dispatching.domain.value_objects.dispatch_command import DispatchCommand
 from agent_engine.dispatching.domain.value_objects.execution_receipt import ExecutionReceipt
 from agent_engine.dispatching.domain.ports.executor import AgentExecutorPort
 from agent_engine.shared.domain.enums import ModelTier
@@ -18,13 +18,21 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
     def _stderr_callback(self, line: str) -> None:
         self._stderr_output.append(line)
 
-    async def execute(self, command: DispatchCommand) -> ExecutionReceipt:
-        prompt = f"{command.system_prompt}\n---\n{command.user_prompt}"
+    async def execute(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        session_id: str,
+        model_tier: ModelTier | None = None,
+        tools: list[str] | None = None,
+        context_payload: dict[str, Any] | None = None,
+    ) -> ExecutionReceipt:
+        prompt = f"{system_prompt}\n---\n{user_prompt}"
         
         model = None
-        if command.model_tier == ModelTier.PRO:
+        if model_tier == ModelTier.PRO:
             model = "opus"
-        elif command.model_tier == ModelTier.FAST:
+        elif model_tier == ModelTier.FAST:
             model = "sonnet"
 
         self._stderr_output.clear()
@@ -34,8 +42,8 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
             async for message in query(
                 prompt=prompt,
                 options=ClaudeAgentOptions(
-                    session_id=command.session_id,
-                    allowed_tools=command.tools,
+                    session_id=session_id,
+                    allowed_tools=tools,
                     permission_mode="bypassPermissions",
                     model=model,
                     stderr=self._stderr_callback,

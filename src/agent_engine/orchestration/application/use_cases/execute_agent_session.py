@@ -6,9 +6,11 @@ from pydantic import BaseModel, Field
 from agent_engine.orchestration.domain.aggregates.agent_session import AgentSession
 from agent_engine.orchestration.domain.enums import SessionStatus
 from agent_engine.orchestration.domain.ports.agent_session_repository import AgentSessionRepository
-from agent_engine.dispatching.application.use_cases.handle_dispatch_command import HandleDispatchCommand
+from agent_engine.dispatching.application.use_cases.execute_session import (
+    ExecuteSession,
+    ExecuteSessionCommand,
+)
 from agent_engine.dispatching.domain.enums import DispatchStatus
-from agent_engine.dispatching.domain.value_objects.dispatch_command import DispatchCommand
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.shared.domain.value_objects.job_id import JobId
 from agent_engine.shared.domain.enums import ModelTier
@@ -32,7 +34,7 @@ class ExecuteAgentSessionResult(BaseModel):
 class ExecuteAgentSession:
     """Orchestration 域的用例：管理 AgentSession 状态，并调用 Dispatching 域执行具体指令。"""
 
-    dispatch_handler: HandleDispatchCommand
+    dispatch_handler: ExecuteSession
     session_repo: AgentSessionRepository
 
     async def execute(self, cmd: ExecuteAgentSessionCommand) -> ExecuteAgentSessionResult:
@@ -50,7 +52,7 @@ class ExecuteAgentSession:
         await self.session_repo.save(session=session)
 
         # 3. 构造指令并下发至 Dispatching (跨上下文调用)
-        dispatch_cmd = DispatchCommand(
+        execute_cmd = ExecuteSessionCommand(
             system_prompt=cmd.system_prompt,
             user_prompt=cmd.requirement or "",
             session_id=str(session.id.value),
@@ -58,14 +60,14 @@ class ExecuteAgentSession:
             context_payload=cmd.context_payload
         )
         
-        receipt = await self.dispatch_handler.execute(dispatch_cmd)
+        result = await self.dispatch_handler.execute(execute_cmd)
 
         # 4. 根据回执更新 Session 状态
-        if receipt.status == DispatchStatus.SUCCESS:
-            session.finish_with_success(output=receipt.output or "")
+        if result.status == DispatchStatus.SUCCESS:
+            session.finish_with_success(output=result.output or "")
             is_success = True
         else:
-            session.finish_with_error(error=receipt.fault or "Unknown error")
+            session.finish_with_error(error=result.fault or "Unknown error")
             is_success = False
         
         await self.session_repo.save(session=session)
@@ -73,5 +75,5 @@ class ExecuteAgentSession:
         return ExecuteAgentSessionResult(
             session_id=session.id,
             is_success=is_success,
-            output=receipt.output
+            output=result.output
         )

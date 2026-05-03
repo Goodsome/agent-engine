@@ -28,17 +28,6 @@ contexts:
       attributes:
       - type: string
         name: base_dir
-      private_methods:
-      - name: _build_system_prompt
-        description: 将 SOP Frontmatter 数据 and Markdown 内容整理为完整的 system_prompt 字符串
-        inputs:
-        - type: any
-          container: map
-          name: metadata
-        - type: string
-          name: content
-        output:
-          type: string
 - name: Bootstrap
 - name: Integration
   domain:
@@ -132,12 +121,6 @@ contexts:
           name: value
         output:
           type: ChatId
-      - name: __str__
-        inputs:
-        - type: Self
-          name: self
-        output:
-          type: string
       - name: serialize
         inputs:
         - type: Self
@@ -184,12 +167,6 @@ contexts:
           name: value
         output:
           type: FeishuMessageId
-      - name: __str__
-        inputs:
-        - type: Self
-          name: self
-        output:
-          type: string
       - name: serialize
         inputs:
         - type: Self
@@ -404,12 +381,6 @@ contexts:
           name: value
         output:
           type: any
-      - name: __str__
-        inputs:
-        - type: Self
-          name: self
-        output:
-          type: any
       - name: serialize
         inputs:
         - type: Self
@@ -448,12 +419,6 @@ contexts:
           name: value
         output:
           type: any
-      - name: __str__
-        inputs:
-        - type: Self
-          name: self
-        output:
-          type: any
       - name: serialize
         inputs:
         - type: Self
@@ -490,12 +455,6 @@ contexts:
         - type: Any
           custom_type_string: Union[UUID, str]
           name: value
-        output:
-          type: any
-      - name: __str__
-        inputs:
-        - type: Self
-          name: self
         output:
           type: any
       - name: serialize
@@ -873,7 +832,7 @@ contexts:
         name: output
       description: Orchestration 域的用例：管理 AgentSession 状态，并调用 Dispatching 域执行具体指令。
       dependencies:
-      - type: HandleDispatchCommand
+      - type: ExecuteSession
         name: dispatch_handler
       - type: AgentSessionRepository
         name: session_repo
@@ -890,7 +849,7 @@ contexts:
     - name: SqlAlchemySessionRepository
       implements: AgentSessionRepository
       technology: sql
-      description: 使用 PostgreSQL 持久化 Agent 会话日志 and 状态
+      description: 使用 PostgreSQL 持久化 Agent 会话日志和状态
       attributes:
       - type: Any
         custom_type_string: async_sessionmaker[AsyncSession]
@@ -917,6 +876,25 @@ contexts:
         default: asyncio.Event
 - name: Dispatching
   domain:
+    enums:
+    - name: DispatchStatus
+      members:
+      - name: SUCCESS
+        value: success
+      - name: FAULT
+        value: fault
+    value_objects:
+    - name: ExecutionReceipt
+      description: 执行回执：Dispatching 上下文执行后的产物
+      attributes:
+      - type: DispatchStatus
+        name: status
+      - type: string
+        optional: true
+        name: output
+      - type: string
+        optional: true
+        name: fault
     ports:
     - name: AgentExecutorPort
       description: Agent 执行器接口：负责与底层模型 CLI 或 SDK 交互
@@ -926,13 +904,28 @@ contexts:
         inputs:
         - type: Self
           name: self
-        - type: DispatchCommand
-          name: command
+        - type: string
+          name: system_prompt
+        - type: string
+          name: user_prompt
+        - type: string
+          name: session_id
+        - type: ModelTier
+          optional: true
+          name: model_tier
+        - type: string
+          container: list
+          optional: true
+          name: tools
+        - type: any
+          container: map
+          optional: true
+          name: context_payload
         output:
           type: ExecutionReceipt
   application:
     use_cases:
-    - name: HandleDispatchCommand
+    - name: ExecuteSession
       kind: query
       inputs:
       - type: string
@@ -976,12 +969,3 @@ contexts:
         container: list
         name: _stderr_output
         default: list
-      private_methods:
-      - name: _stderr_callback
-        inputs:
-        - type: Self
-          name: self
-        - type: string
-          name: line
-        output:
-          type: None

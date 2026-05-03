@@ -3,8 +3,8 @@ from dependency_injector.providers import Factory
 from agent_engine.dispatching.infrastructure.adapters.claude_agent_executor import (
     ClaudeAgentExecutorAdapter,
 )
-from agent_engine.dispatching.application.use_cases.handle_dispatch_command import (
-    HandleDispatchCommand,
+from agent_engine.dispatching.application.use_cases.execute_session import (
+    ExecuteSession,
 )
 
 
@@ -13,7 +13,7 @@ class Container(containers.DeclarativeContainer):
 
     agent_executor = Factory(ClaudeAgentExecutorAdapter)
 
-    handle_dispatch_command = Factory(
-        HandleDispatchCommand,
+    execute_session = Factory(
+        ExecuteSession,
         executor=agent_executor,
     )
