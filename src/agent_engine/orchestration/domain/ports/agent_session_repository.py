@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from agent_engine.orchestration.domain.aggregates.agent_session import AgentSession
 from agent_engine.shared.domain.value_objects.session_id import SessionId
+from agent_engine.shared.domain.value_objects.task_id import TaskId
 
 
 
@@ -14,3 +15,6 @@ class AgentSessionRepository(ABC):
 
     @abstractmethod
     async def find_by_id(self, agent_session_id: SessionId) -> AgentSession | None: ...
+
+    @abstractmethod
+    async def find_by_task_id(self, task_id: TaskId) -> AgentSession | None: ...
