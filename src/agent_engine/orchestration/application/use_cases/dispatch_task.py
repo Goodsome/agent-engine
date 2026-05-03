@@ -1,0 +1,78 @@
+from dataclasses import dataclass
+from agent_engine.orchestration.application.dtos.dispatch_task import DispatchTaskCommand, DispatchTaskResult
+from agent_engine.agent_registry.application.ports.agent_profile_query_service import AgentProfileQueryService
+from agent_engine.dispatching.application.use_cases.execute_session import ExecuteSession, ExecuteSessionCommand
+from agent_engine.orchestration.domain.ports.agent_session_repository import AgentSessionRepository
+from agent_engine.orchestration.domain.aggregates.agent_session import AgentSession
+from agent_engine.shared.domain.value_objects.session_id import SessionId
+from agent_engine.shared.domain.value_objects.project_id import ProjectId
+from agent_engine.shared.domain.value_objects.task_id import TaskId
+from agent_engine.orchestration.domain.enums import SessionStatus
+from agent_engine.dispatching.domain.enums import DispatchStatus
+from agent_engine.agent_registry.application.dtos.agent_profile import AgentProfile
+
+
+@dataclass
+class DispatchTask:
+    """Orchestration 应用层用例：调度任务执行"""
+
+    agent_profile_query_service: AgentProfileQueryService
+    execute_session_use_case: ExecuteSession
+    session_repository: AgentSessionRepository
+
+    async def execute(self, command: DispatchTaskCommand) -> DispatchTaskResult:
+        # 1. 获取 Agent Profile
+        profile = self.agent_profile_query_service.get_profile(command.scope_level)
+        
+        # 2. 拼成 system_prompt
+        system_prompt = self._build_system_prompt(profile)
+        
+        # 3. 创建 AgentSession
+        session_id = SessionId.create()
+        session = AgentSession(
+            id=session_id,
+            task_id=TaskId.reconstitute(command.task_id),
+            project_id=ProjectId(value=command.project_id),
+            status=SessionStatus.PROCESSING,
+            context_payload=command.context_payload,
+            system_prompt=system_prompt
+        )
+        await self.session_repository.save(session)
+        
+        # 4. 调用 ExecuteSession
+        exec_command = ExecuteSessionCommand(
+            system_prompt=system_prompt,
+            user_prompt="",
+            session_id=str(session_id),
+            project_id=command.project_id,
+            context_payload=command.context_payload
+        )
+        
+        exec_result = await self.execute_session_use_case.execute(exec_command)
+        
+        # 5. 更新 Session 状态
+        if exec_result.status == DispatchStatus.SUCCESS:
+            session.status = SessionStatus.COMPLETED
+        else:
+            session.status = SessionStatus.FAILED
+            
+        await self.session_repository.save(session)
+        
+        return DispatchTaskResult(
+            session_id=str(session_id),
+            status=session.status.value,
+            output=exec_result.output,
+            fault=exec_result.fault
+        )
+
+    def _build_system_prompt(self, profile: AgentProfile) -> str:
+        prompt_parts = [
+            f"You are {profile.role_name}.",
+            profile.description,
+            profile.role_prompt,
+        ]
+        if profile.rules:
+            prompt_parts.append("\nRules:")
+            for key, val in profile.rules.items():
+                prompt_parts.append(f"- {key}: {val}")
+        return "\n".join(prompt_parts)

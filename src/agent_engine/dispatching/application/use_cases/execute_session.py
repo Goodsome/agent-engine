@@ -12,9 +12,10 @@ class ExecuteSessionCommand(BaseModel):
     system_prompt: str
     user_prompt: str
     session_id: str
+    project_id: str
     model_tier: ModelTier | None = None
     tools: list[str] = Field(default_factory=lambda: ["Read", "Edit", "Glob"])
-    context_payload: dict[str, Any] = Field(default_factory=dict)
+    context_payload: dict[str, str] = Field(default_factory=dict)
 
 
 class ExecuteSessionResult(BaseModel):

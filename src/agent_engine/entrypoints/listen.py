@@ -1,7 +1,7 @@
-# cli.py
 import typer
 import asyncio
 import logging
+import inspect
 from agent_engine.bootstrap.container import ApplicationContainer
 from agent_engine.bootstrap.subscriptions import bind_all_subscriptions
 
@@ -11,9 +11,15 @@ logger = logging.getLogger(__name__)
 
 async def async_listen_loop(container: ApplicationContainer) -> None:
     """异步的监听主循环逻辑"""
+    init_task = container.init_resources()
+    if inspect.isawaitable(init_task):
+        await init_task
+            
     event_hub = container.event_hub()
     
     try:
+        await bind_all_subscriptions(container)
+        
         # 1. 显式启动 Redis 消费线程和连接池
         logger.info("🚀 正在启动 Agent Engine 事件监听器...")
         await event_hub.start()
@@ -34,12 +40,6 @@ async def async_listen_loop(container: ApplicationContainer) -> None:
 def listen(ctx: typer.Context):
     """启动常驻后台的 Agent 事件消费监听器"""
     container = ctx.obj
-    
-    # 初始化资源（如数据库连接池等）
-    container.init_resources()
-    
-    # 注册路由（此时必须要在 start() 之前注册）
-    bind_all_subscriptions(container)
     
     try:
         # 启动纯异步的消费循环

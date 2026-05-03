@@ -7,6 +7,11 @@ from agent_engine.agent_registry.infrastructure.adapters.local_file_blueprint_lo
 )
 
 
+from agent_engine.agent_registry.infrastructure.adapters.local_agent_profile_query_service import (
+    LocalQueryService,
+)
+
+
 class Container(containers.DeclarativeContainer):
     config = providers.Configuration()
 
@@ -16,4 +21,9 @@ class Container(containers.DeclarativeContainer):
     blueprint_registry = Factory(
         LocalMarkdownBlueprintLoader,
         base_dir=config.SOPS_DIR.if_not_none(default_sops_dir),
+    )
+
+    agent_profile_query_service = Factory(
+        LocalQueryService,
+        sops_dir=default_sops_dir,
     )

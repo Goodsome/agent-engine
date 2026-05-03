@@ -45,6 +45,8 @@ def setup_logging(
     logger = logging.getLogger(logger_name)
     logger.setLevel(log_level)
 
+    logger.propagate = False
+
     # 避免重复添加处理器
     if logger.handlers:
         return logger

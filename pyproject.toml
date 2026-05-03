@@ -41,6 +41,7 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.basedpyright]
 extraPaths = ["./src"]
+reportUnusedCoroutine = "none"
 
 [tool.uv.sources]
 event-hub = { path = "../event-hub", editable = true }
