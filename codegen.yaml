@@ -3,6 +3,32 @@ name: AgentEngine
 contexts:
 - name: AgentRegistry
   domain:
+    enums:
+    - name: ScopeLevel
+      description: Defines the delegation level of the task, mapping directly to Agent
+        roles and context boundaries.
+      members:
+      - name: PROJECT
+        value: project
+      - name: CONTEXT
+        value: context
+      - name: ARCHITECTURE
+        value: architecture
+      - name: COMPONENT
+        value: component
+    - name: ArchitectureLayer
+      description: DDD architecture layers.
+      members:
+      - name: DOMAIN
+        value: domain
+      - name: APPLICATION
+        value: application
+      - name: INFRASTRUCTURE
+        value: infrastructure
+      - name: INTERFACES
+        value: interfaces
+      - name: CROSS_CUTTING
+        value: cross_cutting
     ports:
     - name: BlueprintRegistryPort
       description: 蓝图注册中心接口：负责根据上下文标识符查询执行蓝图
@@ -19,8 +45,24 @@ contexts:
           name: architecture_layer
         output:
           type: ExecutionBlueprint
+  application:
+    ports:
+    - name: AgentProfileQueryService
+      operations:
+      - name: get_profile
+        inputs:
+        - type: Self
+          name: self
+        - type: string
+          name: scope_level
+        output:
+          type: AgentProfile
   infrastructure:
     implementations:
+    - name: LocalQueryService
+      implements: AgentProfileQueryService
+      technology: local
+      description: 基于本地 sops 目录查询 AgentProfile 的服务
     - name: LocalMarkdownBlueprintLoader
       implements: BlueprintRegistryPort
       technology: local
@@ -281,18 +323,16 @@ contexts:
 
         1. 获取或创建会话上下文
 
-        2. 生成虚拟 JobId (防腐层)
+        2. 触发 Agent 执行 (直接调用 Dispatching 域)
 
-        3. 触发 Agent 执行
+        3. 根据聊天类型路由回复 (P2P 发送新消息, GROUP 回复消息)
 
-        4. 根据聊天类型路由回复 (P2P 发送新消息, GROUP 回复消息)
-
-        5. 更新会话上下文'
+        4. 更新会话上下文'
       dependencies:
       - type: FeishuClientPort
         name: feishu_client
-      - type: ExecutionTriggerPort
-        name: execution_trigger
+      - type: ExecuteSession
+        name: execute_session
       - type: ConversationContextRepository
         name: context_repo
   infrastructure:
@@ -517,44 +557,6 @@ contexts:
           name: error
         output:
           type: None
-    - name: DispatchJob
-      description: 聚合根 — 记录一次从 TaskGraph 拉取任务并尝试执行的分发记录。
-      base_types:
-      - Aggregate
-      attributes:
-      - type: JobId
-        name: id
-      - type: TaskId
-        optional: true
-        name: task_id
-      - type: JobStatus
-        name: status
-      - type: SessionId
-        optional: true
-        name: session_id
-      behaviors:
-      - name: mark_running
-        inputs:
-        - type: Self
-          name: self
-        - type: SessionId
-          name: session_id
-        output:
-          type: None
-      - name: mark_completed
-        inputs:
-        - type: Self
-          name: self
-        output:
-          type: None
-      - name: mark_failed
-        inputs:
-        - type: Self
-          name: self
-        - type: string
-          name: reason
-        output:
-          type: None
     enums:
     - name: JobStatus
       members:
@@ -658,73 +660,6 @@ contexts:
         name: is_success
         default: true
     ports:
-    - name: DomainEventListenerPort
-      description: 端口：领域事件监听器，以异步迭代器形式持续产出事件
-      operations:
-      - name: listen
-        description: 持续监听并逐个产出领域事件
-        inputs:
-        - type: Self
-          name: self
-        output:
-          type: Any
-          custom_type_string: AsyncIterator[DispatchableTaskEvent]
-      - name: close
-        description: 优雅关闭接口
-        inputs:
-        - type: Self
-          name: self
-        output:
-          type: None
-    - name: DispatchJobRepository
-      operations:
-      - name: save
-        inputs:
-        - type: Self
-          name: self
-        - type: DispatchJob
-          name: job
-        output:
-          type: None
-      - name: delete
-        inputs:
-        - type: Self
-          name: self
-        - type: JobId
-          name: dispatch_job_id
-        output:
-          type: None
-      - name: find_by_id
-        inputs:
-        - type: Self
-          name: self
-        - type: JobId
-          name: dispatch_job_id
-        output:
-          type: DispatchJob
-          optional: true
-    - name: ExecutionTriggerPort
-      description: 定义一个明确的跨上下文调用端口，用于触发 Execution 域。
-      operations:
-      - name: trigger_session
-        inputs:
-        - type: Self
-          name: self
-        - type: JobId
-          name: job_id
-        - type: string
-          name: system_prompt
-        - type: string
-          optional: true
-          name: requirement
-        - type: dict
-          optional: true
-          name: context_payload
-        - type: ModelTier
-          optional: true
-          name: model_tier
-        output:
-          type: TriggerSessionResult
     - name: AgentSessionRepository
       operations:
       - name: save
@@ -752,100 +687,8 @@ contexts:
         output:
           type: AgentSession
           optional: true
-    domain_events:
-    - name: TaskReadyEvent
-      description: Event emitted when a task is ready to be claimed.
-      attributes:
-      - type: TaskId
-        name: task_id
-      - type: string
-        name: project_id
-      - type: ScopeLevel
-        name: scope_level
-      - type: string
-        optional: true
-        name: bounded_context
-      - type: ArchitectureLayer
-        optional: true
-        name: architecture_layer
-    - name: TaskReviewRequestedEvent
-      description: Event emitted when a task is submitted for review.
-      attributes:
-      - type: TaskId
-        name: task_id
-      - type: string
-        name: project_id
-      - type: ScopeLevel
-        name: scope_level
-      - type: string
-        optional: true
-        name: bounded_context
-      - type: ArchitectureLayer
-        optional: true
-        name: architecture_layer
-  application:
-    use_cases:
-    - name: HandleDispatchableTaskEvent
-      kind: command
-      inputs:
-      - type: Any
-        custom_type_string: Union[TaskReadyEvent, TaskReviewRequestedEvent]
-        name: event
-      outputs:
-      - type: string
-        name: job_id
-      - type: string
-        name: session_id
-      description: 处理可调度任务事件（TaskReadyEvent, TaskReviewRequestedEvent）的用例：创建 DispatchJob
-        -> 加载 SOP -> 触发执行
-      dependencies:
-      - type: DispatchJobRepository
-        name: job_repo
-      - type: ExecutionTriggerPort
-        name: execution_trigger
-      - type: BlueprintRegistryPort
-        name: blueprint_registry
-    - name: ExecuteAgentSession
-      kind: command
-      inputs:
-      - type: JobId
-        name: job_id
-      - type: string
-        name: system_prompt
-      - type: string
-        optional: true
-        name: requirement
-      - type: any
-        container: map
-        name: context_payload
-        default: dict
-      - type: ModelTier
-        optional: true
-        name: model_tier
-      outputs:
-      - type: SessionId
-        name: session_id
-      - type: boolean
-        name: is_success
-      - type: string
-        optional: true
-        name: output
-      description: Orchestration 域的用例：管理 AgentSession 状态，并调用 Dispatching 域执行具体指令。
-      dependencies:
-      - type: ExecuteSession
-        name: dispatch_handler
-      - type: AgentSessionRepository
-        name: session_repo
   infrastructure:
     implementations:
-    - name: SqlAlchemyDispatchJobRepository
-      implements: DispatchJobRepository
-      technology: sql
-      description: 使用 PostgreSQL 持久化 Job 记录
-      attributes:
-      - type: Any
-        custom_type_string: async_sessionmaker[AsyncSession]
-        name: session_factory
     - name: SqlAlchemySessionRepository
       implements: AgentSessionRepository
       technology: sql
@@ -854,26 +697,6 @@ contexts:
       - type: Any
         custom_type_string: async_sessionmaker[AsyncSession]
         name: session_factory
-    - name: InProcessExecutionTrigger
-      implements: ExecutionTriggerPort
-      technology: in
-      description: 进程内直接调用 Execution 域的应用层服务 (UseCase) 触发任务
-      attributes:
-      - type: ExecuteAgentSession
-        name: execute_agent_session
-    - name: PgNotifyEventListener
-      implements: DomainEventListenerPort
-      technology: pg
-      description: 基于 PostgreSQL LISTEN/NOTIFY 的领域事件监听实现
-      attributes:
-      - type: Any
-        custom_type_string: Union[str, PostgresDsn]
-        name: dsn
-      - type: string
-        name: channel
-      - type: asyncio.Event
-        name: _stop_event
-        default: asyncio.Event
 - name: Dispatching
   domain:
     enums:

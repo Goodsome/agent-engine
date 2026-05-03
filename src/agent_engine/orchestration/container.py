@@ -7,9 +7,6 @@ from dependency_injector.providers import Factory
 from agent_engine.orchestration.infrastructure.repositories.sql_alchemy_session_repository import (
     SqlAlchemySessionRepository,
 )
-from agent_engine.orchestration.application.use_cases.execute_agent_session import (
-    ExecuteAgentSession,
-)
 from agent_engine.orchestration.application.event_handlers.on_task_ready import OnTaskReady
 
 
@@ -31,12 +28,6 @@ class Container(DeclarativeContainer):
         session_factory=session_factory,
     )
     
-    execute_agent_session = Factory(
-        ExecuteAgentSession,
-        dispatch_handler=execute_session,
-        session_repo=sql_alchemy_session_repository,
-    )
-
     on_task_ready = Factory(
         OnTaskReady,
     )
