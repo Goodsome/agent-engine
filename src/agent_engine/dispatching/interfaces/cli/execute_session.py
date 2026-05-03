@@ -25,6 +25,7 @@ async def _do_execute_session(
     return await execute_use_case.execute(cmd)
 
 def execute_session(
+    project_id: str = typer.Argument(..., help="The project ID"),
     system_prompt: str = typer.Argument(..., help="The system prompt for the agent"),
     requirement: str = typer.Option(None, "--requirement", "-r", help="The user requirement"),
     context_payload: str = typer.Option("{}", "--context", "-c", help="JSON string of context payload"),
@@ -41,6 +42,7 @@ def execute_session(
     effective_session_id = session_id or str(uuid.uuid4())
 
     cmd = ExecuteSessionCommand(
+        project_id=project_id,
         session_id=effective_session_id,
         system_prompt=system_prompt,
         user_prompt=requirement or "",
