@@ -6,7 +6,7 @@
 
 | 中文术语 (Chinese) | 英文映射 (English/Code) | 严格定义 (Strict Definition) |
 | :--- | :--- | :--- |
-| **任务层级** | `ScopeLevel` | 标识软件开发维度的枚举值或值对象。当前标准包含：`project` (战略), `context` (上下文), `architectural` (架构), `atomic` (原子)。这是本上下文的核心查询主键。 |
+| **任务层级** | `ScopeLevel` | 标识软件开发维度的枚举值或值对象。当前标准包含：`project` (战略), `context` (上下文), `architecture` (架构), `atomic` (原子)。这是本上下文的核心查询主键。 |
 | **角色画像** | `RoleProfile` | 描述 Agent “是谁”的实体数据。包含角色的显示名称（如“领域建模师”）、核心职责简述以及能力边界。 |
 | **系统提示词 / SOP 模板** | `SystemPromptTemplate` | 赋予 Agent “如何思考与行动”的硬编码指令集。它是一段大段的文本模板，内含基于特定 `ScopeLevel` 的标准作业程序 (SOP)、输出格式要求及防幻觉约束。 |
 | **工具/能力集** | `CapabilitySet` | 描述该角色被允许调用的外部工具列表。例如：原子层可能拥有 `WriteFile` 和 `RunLinter` 能力，而战略层可能只拥有 `ReadMarkdown` 能力。 |
@@ -48,7 +48,7 @@
 ### 场景二：未知层级的防御性拦截
 > **说明：** 外部事件可能由于 Bug 传递了一个错误的或暂不支持的任务层级。
 
-* **Given (假设):** 系统的配置目录中**仅存在** `project.md`, `context.md`, `architectural.md`, `atomic.md` 四个配置文件。
+* **Given (假设):** 系统的配置目录中**仅存在** `project.md`, `context.md`, `architecture.md`, `atomic.md` 四个配置文件。
 * **When (当):** Orchestration 发起一个 `BlueprintQuery(scope_level="infrastructure")`。
 * **Then (那么):** 系统必须：
   1. 在配置库检索时发生未命中 (Miss)。
@@ -59,7 +59,7 @@
 > **说明：** 开发者修改了 Markdown 配置文件，优化了架构师的提示词。
 
 * **Given (假设):** 系统支持配置的基于文件系统的热重载 (Hot-Reloading)。
-* **When (当):** `architectural.md` 文件在磁盘上被修改并保存。
+* **When (当):** `architecture.md` 文件在磁盘上被修改并保存。
 * **Then (那么):** 系统必须：
   1. 重新解析该 Markdown 的 Frontmatter 和正文，并验证格式。
   2. 将内存中该 `ScopeLevel` 对应的 `ExecutionBlueprint` 原子化替换。

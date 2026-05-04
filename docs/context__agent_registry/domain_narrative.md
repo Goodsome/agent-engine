@@ -21,7 +21,7 @@
 
 ### 3.1 身份与策略检索 (Identity & Strategy Retrieval)
 当 Orchestration 接收到一个新坐标的任务，需要确定“谁来做”时：
-1.  **接收层级请求：** Registry 接收到一个包含 `ScopeLevel`（如 `architectural`）的查询请求。
+1.  **接收层级请求：** Registry 接收到一个包含 `ScopeLevel`（如 `architecture`）的查询请求。
 2.  **定位 SOP 模板：** 内部查询逻辑命中预设的“架构设计层级”规则。
 3.  **提取角色规格：** 检索该层级对应的 Agent 画像（例如：“DDD 架构专家”）。
 4.  **下发执行蓝图：** 返回包含角色名称、完整的系统提示词（System Prompt）以及建议的工具集。此时，Orchestration 获得了一份完整的“执行锦囊”。

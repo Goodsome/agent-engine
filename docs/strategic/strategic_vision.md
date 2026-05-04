@@ -25,7 +25,7 @@
 *支撑核心业务运转，提供必要的数据转化与元数据管理能力。*
 
 * **Agent 能力注册子域 (Agent Registry & Capability):**
-    解决系统耦合的关键。作为 Agent 技能和角色的“黄页”。它维护任务层级（project/context/architectural/atomic）与具体 Agent 角色、系统提示词 (System Prompt)、可用工具 (Tools) 之间的映射关系。确保上游系统只需发出客观事件，而由本子域动态决定“谁来做”以及“怎么做”。
+    解决系统耦合的关键。作为 Agent 技能和角色的“黄页”。它维护任务层级（project/context/architecture/component）与具体 Agent 角色、系统提示词 (System Prompt)、可用工具 (Tools) 之间的映射关系。确保上游系统只需发出客观事件，而由本子域动态决定“谁来做”以及“怎么做”。
 
 ### 2.3 通用域 (Generic Domain)
 *采用成熟标准或基础设施，MVP 阶段可仅做接口预留，不投入自研精力。*

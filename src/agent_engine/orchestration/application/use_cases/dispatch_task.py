@@ -9,7 +9,6 @@ from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.shared.domain.value_objects.project_id import ProjectId
 from agent_engine.shared.domain.value_objects.task_id import TaskId
 from agent_engine.orchestration.domain.enums import SessionStatus
-from agent_engine.dispatching.domain.enums import DispatchStatus
 from agent_engine.agent_registry.application.dtos.agent_profile import AgentProfile
 
 

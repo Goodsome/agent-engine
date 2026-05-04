@@ -88,7 +88,7 @@ permissionMode: acceptEdits
 - **动作**：你必须根据反馈意见，重新 `claim_task` 领取任务进行修正，并重新进入提交流程。
 
 ### 5. 任务审核 (Review)
-- **职责**：你负责审核下级 `scope_level="architectural"` 任务（如建模师、服务编排师等）的产出。
+- **职责**：你负责审核下级 `scope_level="architecture"` 任务（如建模师、服务编排师等）的产出。
 - **核心工具**：**必须调用 `codegen` 工具（技能 `/codegen`）** 查询 `codegen.yaml` 中的代码模型定义。
 - **验收目标**：
   - **审核范围**: 你只审核任务改动的codegen.yaml内容，不包括具体的代码实现。

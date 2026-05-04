@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass
 
-from event_hub import TaskReady
+from event_hub.integration_events import TaskReady
 from agent_engine.orchestration.application.use_cases.dispatch_task import DispatchTask
 from agent_engine.orchestration.application.dtos.dispatch_task import DispatchTaskCommand
 
