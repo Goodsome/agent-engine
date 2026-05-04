@@ -16,7 +16,7 @@ class AgentSession(Aggregate):
     task_id: TaskId
     project_id: ProjectId
     status: SessionStatus
-    context_payload: dict[str, str]
+    context_payload: dict[str, str | None]
 
     system_prompt: str = ""
     messages: list[Message] = Field(default_factory=list)

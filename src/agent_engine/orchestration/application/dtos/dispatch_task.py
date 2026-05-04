@@ -6,7 +6,7 @@ class DispatchTaskCommand(BaseModel):
     task_id: str
     project_id: str
     scope_level: str
-    context_payload: dict[str, str] = Field(default_factory=dict)
+    context_payload: dict[str, str | None] = Field(default_factory=dict)
 
 
 class DispatchTaskResult(BaseModel):

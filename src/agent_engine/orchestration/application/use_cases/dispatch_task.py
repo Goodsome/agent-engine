@@ -42,7 +42,7 @@ class DispatchTask:
         # 4. 调用 ExecuteSession
         exec_command = ExecuteSessionCommand(
             system_prompt=system_prompt,
-            user_prompt="",
+            user_prompt=f"执行任务：{command.task_id}",
             session_id=str(session_id),
             project_id=command.project_id,
             context_payload=command.context_payload

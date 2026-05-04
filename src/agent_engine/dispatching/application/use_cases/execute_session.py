@@ -1,4 +1,4 @@
-from typing import Any
+import logging 
 from pydantic import BaseModel, Field
 from dataclasses import dataclass
 
@@ -6,6 +6,7 @@ from agent_engine.dispatching.domain.ports.executor import AgentExecutorPort
 from agent_engine.dispatching.domain.enums import DispatchStatus
 from agent_engine.shared.domain.enums import ModelTier
 
+logger = logging.getLogger(__name__)
 
 class ExecuteSessionCommand(BaseModel):
     """执行会话指令：包含执行 Agent 所需的所有数据"""
@@ -15,7 +16,7 @@ class ExecuteSessionCommand(BaseModel):
     project_id: str
     model_tier: ModelTier | None = None
     tools: list[str] = Field(default_factory=lambda: ["Read", "Edit", "Glob"])
-    context_payload: dict[str, str] = Field(default_factory=dict)
+    context_payload: dict[str, str | None] = Field(default_factory=dict)
 
 
 class ExecuteSessionResult(BaseModel):
@@ -33,6 +34,7 @@ class ExecuteSession:
 
     async def execute(self, command: ExecuteSessionCommand) -> ExecuteSessionResult:
         # 在此处可以增加校验、重试逻辑或超时控制（如果底层适配器未实现）
+        logger.info(f"Executing session: {command.session_id}")
         receipt = await self.executor.execute(
             system_prompt=command.system_prompt,
             user_prompt=command.user_prompt,

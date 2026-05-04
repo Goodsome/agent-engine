@@ -1,4 +1,5 @@
 import logging
+import json
 from typing import Any
 from dataclasses import dataclass, field
 from claude_agent_sdk import query, ClaudeAgentOptions
@@ -25,9 +26,9 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
         session_id: str,
         model_tier: ModelTier | None = None,
         tools: list[str] | None = None,
-        context_payload: dict[str, Any] | None = None,
+        context_payload: dict[str, str | None] | None = None,
     ) -> ExecutionReceipt:
-        prompt = f"{system_prompt}\n---\n{user_prompt}"
+        prompt = f"{system_prompt}\n---\n{user_prompt}\n---\n{json.dumps(context_payload, indent=2)}"
         
         model = None
         if model_tier == ModelTier.PRO:
@@ -43,7 +44,6 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
                 prompt=prompt,
                 options=ClaudeAgentOptions(
                     session_id=session_id,
-                    allowed_tools=tools,
                     permission_mode="bypassPermissions",
                     model=model,
                     stderr=self._stderr_callback,
