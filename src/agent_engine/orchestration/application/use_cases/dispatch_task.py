@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+
 from agent_engine.orchestration.application.dtos.dispatch_task import DispatchTaskCommand, DispatchTaskResult
 from agent_engine.agent_registry.application.ports.agent_profile_query_service import AgentProfileQueryService
 from agent_engine.dispatching.application.use_cases.execute_session import ExecuteSession, ExecuteSessionCommand
@@ -26,6 +27,7 @@ class DispatchTask:
         
         # 2. 拼成 system_prompt
         system_prompt = self._build_system_prompt(profile)
+        user_prompt = f"执行任务：{command.task_id}"
         
         # 3. 创建 AgentSession
         session_id = SessionId.create()
@@ -37,24 +39,23 @@ class DispatchTask:
             context_payload=command.context_payload,
             system_prompt=system_prompt
         )
+        session.add_user_message(user_prompt)
         await self.session_repository.save(session)
         
         # 4. 调用 ExecuteSession
         exec_command = ExecuteSessionCommand(
             system_prompt=system_prompt,
-            user_prompt=f"执行任务：{command.task_id}",
+            user_prompt=user_prompt,
             session_id=str(session_id),
             project_id=command.project_id,
             context_payload=command.context_payload
         )
         
         exec_result = await self.execute_session_use_case.execute(exec_command)
+        session.add_agent_message(content=exec_result.output or "")
         
         # 5. 更新 Session 状态
-        if exec_result.status == DispatchStatus.SUCCESS:
-            session.status = SessionStatus.COMPLETED
-        else:
-            session.status = SessionStatus.FAILED
+        session.status = SessionStatus.IDLE
             
         await self.session_repository.save(session)
         

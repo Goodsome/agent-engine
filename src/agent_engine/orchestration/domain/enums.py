@@ -8,8 +8,6 @@ class SessionLifeCycle(str, Enum):
 class SessionStatus(str, Enum):
     IDLE = "idle"
     PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
 
 
 class MessageRole(str, Enum):

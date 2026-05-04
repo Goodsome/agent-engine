@@ -4,7 +4,7 @@ from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.shared.domain.value_objects.project_id import ProjectId
 from agent_engine.shared.domain.value_objects.task_id import TaskId
 
-from agent_engine.orchestration.domain.enums import SessionStatus
+from agent_engine.orchestration.domain.enums import SessionStatus, MessageRole
 from agent_engine.orchestration.domain.value_objects.message import Message
 
 
@@ -20,3 +20,10 @@ class AgentSession(Aggregate):
 
     system_prompt: str = ""
     messages: list[Message] = Field(default_factory=list)
+
+    def add_user_message(self, content: str) -> None:
+        self.messages.append(Message(content=content, role=MessageRole.USER))
+
+    def add_agent_message(self, content: str) -> None:
+        self.messages.append(Message(content=content, role=MessageRole.ASSISTANT))
+        
