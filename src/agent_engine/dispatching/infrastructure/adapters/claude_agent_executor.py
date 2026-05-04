@@ -1,8 +1,17 @@
 import logging
 import json
-from typing import Any
+from typing import override
 from dataclasses import dataclass, field
-from claude_agent_sdk import query, ClaudeAgentOptions
+from claude_agent_sdk import (
+    ClaudeSDKClient,
+    ClaudeAgentOptions,
+    AssistantMessage,
+    UserMessage,
+    ResultMessage,
+    TextBlock,
+    ThinkingBlock,
+    get_session_info
+)
 from agent_engine.dispatching.domain.enums import DispatchStatus
 from agent_engine.dispatching.domain.value_objects.execution_receipt import ExecutionReceipt
 from agent_engine.dispatching.domain.ports.executor import AgentExecutorPort
@@ -19,6 +28,7 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
     def _stderr_callback(self, line: str) -> None:
         self._stderr_output.append(line)
 
+    @override
     async def execute(
         self,
         system_prompt: str,
@@ -28,7 +38,14 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
         tools: list[str] | None = None,
         context_payload: dict[str, str | None] | None = None,
     ) -> ExecutionReceipt:
-        prompt = f"{system_prompt}\n---\n{user_prompt}\n---\n{json.dumps(context_payload, indent=2)}"
+        prompts: list[str] = []
+        if system_prompt:
+            prompts.append(system_prompt)
+        prompts.append(user_prompt)
+        if context_payload:
+            prompts.append(json.dumps(context_payload, indent=2))
+            
+        prompt = "\n---\n".join(prompts)
         
         model = None
         if model_tier == ModelTier.PRO:
@@ -37,31 +54,43 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
             model = "sonnet"
 
         self._stderr_output.clear()
-        output_text = []
+        output_text: list[str] = []
 
         try:
-            async for message in query(
-                prompt=prompt,
-                options=ClaudeAgentOptions(
-                    session_id=session_id,
-                    permission_mode="bypassPermissions",
-                    model=model,
-                    stderr=self._stderr_callback,
-                    setting_sources=["user", "project"]
-                )
-            ):
-                if hasattr(message, "content"):
-                    content = message.content
-                    if isinstance(content, list):
-                        # Handle list of blocks (ThinkingBlock, TextBlock, etc.)
-                        for block in content:
-                            if hasattr(block, "text"):
-                                output_text.append(str(block.text))
-                            elif hasattr(block, "thinking"):
-                                # Optionally log thinking
-                                pass
-                    elif isinstance(content, str):
-                        output_text.append(content)
+            # 检查会话是否存在以决定是 resume 还是新开 session
+            session_info = get_session_info(session_id)
+            # 如果会话已存在，使用 resume 恢复并置 session_id 为 None；
+            # 否则使用 session_id 指定新会话 ID 并置 resume 为 None。
+            resume_val = session_id if session_info else None
+            sid_val = None if session_info else session_id
+
+            logger.info(f"resume={resume_val}, session_id={sid_val}")
+            options = ClaudeAgentOptions(
+                session_id=sid_val,
+                resume=resume_val,
+                permission_mode="bypassPermissions",
+                model=model,
+                stderr=self._stderr_callback,
+                setting_sources=["user", "project"],
+            )
+            async with ClaudeSDKClient(options=options) as client:
+                await client.query(prompt=prompt)
+                async for message in client.receive_response():
+                    if isinstance(message, (AssistantMessage, UserMessage)):
+                        content = message.content
+                        if isinstance(content, list):
+                            # Handle list of blocks (ThinkingBlock, TextBlock, etc.)
+                            for block in content:
+                                if isinstance(block, TextBlock):
+                                    output_text.append(str(block.text))
+                                elif isinstance(block, ThinkingBlock):
+                                    # Optionally log thinking
+                                    pass
+                        else:
+                            # basedpyright says isinstance(content, str) is redundant
+                            output_text.append(str(content))
+                    elif isinstance(message, ResultMessage):
+                        logger.info(f"Execution finished for session: {message.session_id}")
             
             final_output = "".join(output_text)
             return ExecutionReceipt(
@@ -69,8 +98,10 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
                 output=final_output
             )
         except Exception as e:
-            logger.error(f"Claude execution failed: {e}")
+            stderr_msg = "".join(self._stderr_output)
+            error_detail = f"{e}\nStderr: {stderr_msg}" if stderr_msg else str(e)
+            logger.error(f"Claude execution failed: {error_detail}")
             return ExecutionReceipt(
                 status=DispatchStatus.FAULT,
-                fault=str(e)
+                fault=error_detail
             )

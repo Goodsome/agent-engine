@@ -26,8 +26,8 @@ async def _do_execute_session(
 
 def execute_session(
     project_id: str = typer.Argument(..., help="The project ID"),
-    system_prompt: str = typer.Argument(..., help="The system prompt for the agent"),
-    requirement: str = typer.Option(None, "--requirement", "-r", help="The user requirement"),
+    user_prompt: str = typer.Argument(..., help="The user prompt"),
+    system_prompt: str = typer.Option(None, "--system-prompt", "-p", help="The system prompt for the agent"),
     context_payload: str = typer.Option("{}", "--context", "-c", help="JSON string of context payload"),
     session_id: str = typer.Option(None, "--session-id", "-s", help="The session ID"),
     model_tier: ModelTier = typer.Option(ModelTier.FAST, "--tier", "-t", help="Model tier to use"),
@@ -44,8 +44,8 @@ def execute_session(
     cmd = ExecuteSessionCommand(
         project_id=project_id,
         session_id=effective_session_id,
-        system_prompt=system_prompt,
-        user_prompt=requirement or "",
+        system_prompt=system_prompt or "",
+        user_prompt=user_prompt,
         context_payload=payload,
         model_tier=model_tier,
     )
