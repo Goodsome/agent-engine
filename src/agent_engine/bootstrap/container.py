@@ -76,7 +76,6 @@ class ApplicationContainer(DeclarativeContainer):
         config=config,
         session_factory=session_factory,
         execute_session=dispatching_container.execute_session,
-        blueprint_registry=agent_registry_container.blueprint_registry,
         agent_profile_query_service=agent_registry_container.agent_profile_query_service,
     )
 

@@ -16,7 +16,6 @@ class Container(DeclarativeContainer):
     
     # 外部依赖
     execute_session = providers.Dependency()
-    blueprint_registry = providers.Dependency()
     agent_profile_query_service = providers.Dependency()
     
     sql_alchemy_session_repository = Factory(
