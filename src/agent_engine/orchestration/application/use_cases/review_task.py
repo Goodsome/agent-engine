@@ -1,13 +1,28 @@
 import logging
 from dataclasses import dataclass
 
-from agent_engine.orchestration.application.dtos.review_task import ReviewTaskCommand, ReviewTaskResult
 from agent_engine.orchestration.domain.ports.agent_session_repository import AgentSessionRepository
 from agent_engine.dispatching.application.use_cases.execute_session import ExecuteSession, ExecuteSessionCommand
 from agent_engine.shared.domain.value_objects.task_id import TaskId
 from agent_engine.orchestration.domain.enums import SessionStatus
 
+from pydantic import BaseModel
+
 logger = logging.getLogger(__name__)
+
+class ReviewTaskCommand(BaseModel):
+    """审核任务指令"""
+    task_id: str
+    parent_id: str | None = None
+
+
+class ReviewTaskResult(BaseModel):
+    """审核任务结果 DTO"""
+    session_id: str | None = None
+    status: str
+    output: str | None = None
+    fault: str | None = None
+
 
 
 @dataclass

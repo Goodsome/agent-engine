@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from event_hub.integration_events import TaskReviewRequested
 from agent_engine.orchestration.application.use_cases.review_task import ReviewTask
-from agent_engine.orchestration.application.dtos.review_task import ReviewTaskCommand
+from agent_engine.orchestration.application.use_cases.review_task import ReviewTaskCommand
 
 logger = logging.getLogger(__name__)
 

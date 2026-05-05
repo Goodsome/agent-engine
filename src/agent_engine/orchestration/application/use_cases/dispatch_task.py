@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-from agent_engine.orchestration.application.dtos.dispatch_task import DispatchTaskCommand, DispatchTaskResult
 from agent_engine.agent_registry.application.ports.agent_profile_query_service import AgentProfileQueryService
 from agent_engine.dispatching.application.use_cases.execute_session import ExecuteSession, ExecuteSessionCommand
 from agent_engine.orchestration.domain.ports.agent_session_repository import AgentSessionRepository
@@ -10,6 +9,24 @@ from agent_engine.shared.domain.value_objects.project_id import ProjectId
 from agent_engine.shared.domain.value_objects.task_id import TaskId
 from agent_engine.orchestration.domain.enums import SessionStatus
 from agent_engine.agent_registry.application.dtos.agent_profile import AgentProfile
+
+from pydantic import BaseModel, Field
+
+
+class DispatchTaskCommand(BaseModel):
+    """调度任务指令：描述了要由哪个 Agent 执行哪个任务"""
+    task_id: str
+    project_id: str
+    scope_level: str
+    context_payload: dict[str, str | None] = Field(default_factory=dict)
+
+
+class DispatchTaskResult(BaseModel):
+    """调度任务结果 DTO"""
+    session_id: str
+    status: str
+    output: str | None = None
+    fault: str | None = None
 
 
 @dataclass

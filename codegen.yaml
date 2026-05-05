@@ -29,22 +29,6 @@ contexts:
         value: interfaces
       - name: CROSS_CUTTING
         value: cross_cutting
-    ports:
-    - name: BlueprintRegistryPort
-      description: 蓝图注册中心接口：负责根据上下文标识符查询执行蓝图
-      operations:
-      - name: get_blueprint
-        description: 获取指定层级和范围的执行蓝图
-        inputs:
-        - type: Self
-          name: self
-        - type: string
-          name: scope_level
-        - type: string
-          optional: true
-          name: architecture_layer
-        output:
-          type: ExecutionBlueprint
   application:
     ports:
     - name: AgentProfileQueryService
@@ -63,13 +47,9 @@ contexts:
       implements: AgentProfileQueryService
       technology: local
       description: 基于本地 sops 目录查询 AgentProfile 的服务
-    - name: LocalMarkdownBlueprintLoader
-      implements: BlueprintRegistryPort
-      technology: local
-      description: 基于本地 Markdown 文件的蓝图加载器
       attributes:
       - type: string
-        name: base_dir
+        name: sops_dir
 - name: Bootstrap
 - name: Integration
   domain:
@@ -533,8 +513,8 @@ contexts:
         name: project_id
       - type: SessionStatus
         name: status
-      - type: string
-        container: map
+      - type: Any
+        custom_type_string: dict[str, str | None]
         name: context_payload
       - type: string
         name: system_prompt
@@ -543,6 +523,23 @@ contexts:
         container: list
         name: messages
         default: list
+      behaviors:
+      - name: add_user_message
+        inputs:
+        - type: Self
+          name: self
+        - type: string
+          name: content
+        output:
+          type: None
+      - name: add_agent_message
+        inputs:
+        - type: Self
+          name: self
+        - type: string
+          name: content
+        output:
+          type: None
     enums:
     - name: SessionLifeCycle
       members:
@@ -607,6 +604,89 @@ contexts:
         output:
           type: AgentSession
           optional: true
+  application:
+    use_cases:
+    - name: DispatchTask
+      kind: query
+      inputs:
+      - type: string
+        name: task_id
+      - type: string
+        name: project_id
+      - type: string
+        name: scope_level
+      - type: Any
+        custom_type_string: dict[str, str | None]
+        name: context_payload
+        default: dict
+      outputs:
+      - type: string
+        name: session_id
+      - type: string
+        name: status
+      - type: string
+        optional: true
+        name: output
+      - type: string
+        optional: true
+        name: fault
+      description: Orchestration 应用层用例：调度任务执行
+      dependencies:
+      - type: AgentProfileQueryService
+        name: agent_profile_query_service
+      - type: ExecuteSession
+        name: execute_session_use_case
+      - type: AgentSessionRepository
+        name: session_repository
+    - name: ReviewTask
+      kind: query
+      inputs:
+      - type: string
+        name: task_id
+      - type: string
+        optional: true
+        name: parent_id
+      outputs:
+      - type: string
+        optional: true
+        name: session_id
+      - type: string
+        name: status
+      - type: string
+        optional: true
+        name: output
+      - type: string
+        optional: true
+        name: fault
+      description: Orchestration 应用层用例：审核任务
+      dependencies:
+      - type: AgentSessionRepository
+        name: session_repository
+      - type: ExecuteSession
+        name: execute_session_use_case
+    - name: ReviseTask
+      kind: query
+      inputs:
+      - type: string
+        name: task_id
+      outputs:
+      - type: string
+        optional: true
+        name: session_id
+      - type: string
+        name: status
+      - type: string
+        optional: true
+        name: output
+      - type: string
+        optional: true
+        name: fault
+      description: Orchestration 应用层用例：任务审核不通过，重新修改
+      dependencies:
+      - type: AgentSessionRepository
+        name: session_repository
+      - type: ExecuteSession
+        name: execute_session_use_case
   infrastructure:
     implementations:
     - name: SqlAlchemySessionRepository
@@ -660,9 +740,9 @@ contexts:
           container: list
           optional: true
           name: tools
-        - type: any
-          container: map
+        - type: Any
           optional: true
+          custom_type_string: dict[str, str | None] | None
           name: context_payload
         output:
           type: ExecutionReceipt
@@ -677,6 +757,8 @@ contexts:
         name: user_prompt
       - type: string
         name: session_id
+      - type: string
+        name: project_id
       - type: ModelTier
         optional: true
         name: model_tier
@@ -684,8 +766,8 @@ contexts:
         container: list
         name: tools
         default: 'lambda: [''Read'', ''Edit'', ''Glob'']'
-      - type: any
-        container: map
+      - type: Any
+        custom_type_string: dict[str, str | None]
         name: context_payload
         default: dict
       outputs:
