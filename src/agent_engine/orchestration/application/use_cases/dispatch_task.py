@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass
 
 from agent_engine.agent_registry.application.ports.agent_profile_query_service import AgentProfileQueryService
@@ -12,6 +13,7 @@ from agent_engine.agent_registry.application.dtos.agent_profile import AgentProf
 
 from pydantic import BaseModel, Field
 
+logger = logging.getLogger(__name__)
 
 class DispatchTaskCommand(BaseModel):
     """调度任务指令：描述了要由哪个 Agent 执行哪个任务"""
@@ -95,5 +97,5 @@ class DispatchTask:
         if profile.rules:
             prompt_parts.append("\nSPECIFIC_RULES:")
             for key, val in profile.rules.items():
-                prompt_parts.append(f"- {key}: {val}")
+                prompt_parts.append(f"- {key}:\n{val}")
         return "\n".join(prompt_parts)
