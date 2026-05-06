@@ -1,5 +1,6 @@
 import logging
 import json
+from pathlib import Path
 from typing import override
 from dataclasses import dataclass, field
 from claude_agent_sdk import (
@@ -37,7 +38,7 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
         model_tier: ModelTier | None = None,
         tools: list[str] | None = None,
         context_payload: dict[str, str | None] | None = None,
-        cwd: str | None = None,
+        cwd: Path | None = None,
     ) -> ExecutionReceipt:
         prompts: list[str] = []
         if system_prompt:

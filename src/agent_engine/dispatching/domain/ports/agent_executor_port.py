@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from agent_engine.dispatching.domain.value_objects.execution_receipt import ExecutionReceipt
 from agent_engine.shared.domain.enums import ModelTier
+from pathlib import Path
 
 
 class AgentExecutorPort(ABC):
@@ -15,6 +16,7 @@ class AgentExecutorPort(ABC):
         model_tier: ModelTier | None = None,
         tools: list[str] | None = None,
         context_payload: dict[str, str | None] | None = None,
+        cwd: Path | None = None,
     ) -> ExecutionReceipt:
         """执行派发指令并返回回执"""
         ...
