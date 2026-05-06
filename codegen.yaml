@@ -39,6 +39,9 @@ contexts:
           name: self
         - type: string
           name: scope_level
+        - type: string
+          optional: true
+          name: architecture_layer
         output:
           type: AgentProfile
   infrastructure:
@@ -48,7 +51,7 @@ contexts:
       technology: local
       description: 基于本地 sops 目录查询 AgentProfile 的服务
       attributes:
-      - type: string
+      - type: Path
         name: sops_dir
 - name: Bootstrap
 - name: Integration
@@ -369,6 +372,69 @@ contexts:
         name: _loop
 - name: Shared
   domain:
+    core:
+    - name: DomainException
+      description: Base class for domain exceptions.
+      base_types:
+      - Exception
+    - name: ValueObject
+      description: 值对象基类 特征： 1. 不可变（frozen=True） 2. 相等性基于所有属性值 3. 无唯一标识
+      base_types:
+      - BaseModel
+      attributes:
+      - type: Any
+        name: model_config
+    - name: AggregateRoot
+      description: 聚合根基类 特征： 1. 继承 Entity 的所有特性 2. 管理领域事件的发布和收集 3. 确保聚合边界内的一致性
+      base_types:
+      - BaseModel
+      attributes:
+      - type: Any
+        name: model_config
+      - type: DomainEvent
+        container: list
+        name: _domain_events
+      behaviors:
+      - name: add_domain_event
+        description: "添加领域事件\nArgs:\n    event: 要添加的领域事件实例\nRaises:\n    TypeError:\
+          \ 如果 event 不是 DomainEvent 的实例"
+        inputs:
+        - type: Self
+          name: self
+        - type: DomainEvent
+          name: event
+        output:
+          type: None
+      - name: collect_events
+        description: "收集并清空领域事件\nReturns:\n    收集到的所有领域事件列表（副本）"
+        inputs:
+        - type: Self
+          name: self
+        output:
+          type: DomainEvent
+          container: list
+      - name: clear_events
+        description: 清空领域事件
+        inputs:
+        - type: Self
+          name: self
+        output:
+          type: None
+      - name: has_events
+        description: "检查是否有未处理的领域事件\n\nReturns:\n    如果有事件返回 True，否则返回 False"
+        inputs:
+        - type: Self
+          name: self
+        output:
+          type: boolean
+    - name: Entity
+      description: 实体基类 特征： 1. 具有唯一标识（ID） 2. 相等性基于 ID 判断 3. 可变（但应通过行为方法修改） 4. 使用 UTC
+        时区记录时间
+      base_types:
+      - BaseModel
+      attributes:
+      - type: Any
+        name: model_config
     enums:
     - name: ModelTier
       description: 模型能力档位定义
@@ -615,6 +681,9 @@ contexts:
         name: project_id
       - type: string
         name: scope_level
+      - type: string
+        optional: true
+        name: architecture_layer
       - type: Any
         custom_type_string: dict[str, str | None]
         name: context_payload
@@ -744,6 +813,9 @@ contexts:
           optional: true
           custom_type_string: dict[str, str | None] | None
           name: context_payload
+        - type: Path
+          optional: true
+          name: cwd
         output:
           type: ExecutionReceipt
   application:
