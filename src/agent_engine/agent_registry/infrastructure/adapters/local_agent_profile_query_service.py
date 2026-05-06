@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class LocalQueryService(AgentProfileQueryService):
+class LocalAgentProfileQueryService(AgentProfileQueryService):
     """基于本地 sops 目录查询 AgentProfile 的服务"""
 
     sops_dir: str

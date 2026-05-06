@@ -1,6 +1,6 @@
 from dependency_injector.containers import DeclarativeContainer
 from dependency_injector.providers import Factory, Configuration, Dependency
-from agent_engine.orchestration.infrastructure.repositories.sql_alchemy_session_repository import (
+from agent_engine.orchestration.infrastructure.adapters.sql_alchemy_session_repository import (
     SqlAlchemySessionRepository,
 )
 from agent_engine.orchestration.application.use_cases.dispatch_task import DispatchTask

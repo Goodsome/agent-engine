@@ -43,7 +43,7 @@ contexts:
           type: AgentProfile
   infrastructure:
     implementations:
-    - name: LocalQueryService
+    - name: LocalAgentProfileQueryService
       implements: AgentProfileQueryService
       technology: local
       description: 基于本地 sops 目录查询 AgentProfile 的服务
@@ -758,6 +758,7 @@ contexts:
       - type: string
         name: session_id
       - type: string
+        optional: true
         name: project_id
       - type: ModelTier
         optional: true

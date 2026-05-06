@@ -1,6 +1,6 @@
-from dependency_injector import containers, providers
-from dependency_injector.providers import Factory
-from agent_engine.dispatching.infrastructure.adapters.claude_agent_executor import (
+from dependency_injector import containers
+from dependency_injector.providers import Factory, Configuration
+from agent_engine.dispatching.infrastructure.adapters.claude_agent_executor_adapter import (
     ClaudeAgentExecutorAdapter,
 )
 from agent_engine.dispatching.application.use_cases.execute_session import (
@@ -9,11 +9,11 @@ from agent_engine.dispatching.application.use_cases.execute_session import (
 
 
 class Container(containers.DeclarativeContainer):
-    config = providers.Configuration()
+    config: Configuration = Configuration()
 
-    agent_executor = Factory(ClaudeAgentExecutorAdapter)
+    agent_executor: Factory[ClaudeAgentExecutorAdapter] = Factory(ClaudeAgentExecutorAdapter)
 
-    execute_session = Factory(
+    execute_session: Factory[ExecuteSession] = Factory(
         ExecuteSession,
         executor=agent_executor,
     )

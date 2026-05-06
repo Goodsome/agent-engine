@@ -2,7 +2,7 @@ import logging
 from pydantic import BaseModel, Field
 from dataclasses import dataclass
 
-from agent_engine.dispatching.domain.ports.executor import AgentExecutorPort
+from agent_engine.dispatching.domain.ports.agent_executor_port import AgentExecutorPort
 from agent_engine.dispatching.domain.enums import DispatchStatus
 from agent_engine.shared.domain.enums import ModelTier
 
@@ -13,7 +13,7 @@ class ExecuteSessionCommand(BaseModel):
     system_prompt: str
     user_prompt: str
     session_id: str
-    project_id: str
+    project_id: str | None = None
     model_tier: ModelTier | None = None
     tools: list[str] = Field(default_factory=lambda: ["Read", "Edit", "Glob"])
     context_payload: dict[str, str | None] = Field(default_factory=dict)

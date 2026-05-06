@@ -14,7 +14,7 @@ from claude_agent_sdk import (
 )
 from agent_engine.dispatching.domain.enums import DispatchStatus
 from agent_engine.dispatching.domain.value_objects.execution_receipt import ExecutionReceipt
-from agent_engine.dispatching.domain.ports.executor import AgentExecutorPort
+from agent_engine.dispatching.domain.ports.agent_executor_port import AgentExecutorPort
 from agent_engine.shared.domain.enums import ModelTier
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,7 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
         model_tier: ModelTier | None = None,
         tools: list[str] | None = None,
         context_payload: dict[str, str | None] | None = None,
+        cwd: str | None = None,
     ) -> ExecutionReceipt:
         prompts: list[str] = []
         if system_prompt:
@@ -63,8 +64,6 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
             # 否则使用 session_id 指定新会话 ID 并置 resume 为 None。
             resume_val = session_id if session_info else None
             sid_val = None if session_info else session_id
-
-            logger.info(f"resume={resume_val}, session_id={sid_val}")
             options = ClaudeAgentOptions(
                 session_id=sid_val,
                 resume=resume_val,
@@ -72,6 +71,7 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
                 model=model,
                 stderr=self._stderr_callback,
                 setting_sources=["user", "project"],
+                cwd=cwd,
             )
             async with ClaudeSDKClient(options=options) as client:
                 await client.query(prompt=prompt)
