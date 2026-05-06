@@ -73,6 +73,7 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
                 stderr=self._stderr_callback,
                 setting_sources=["user", "project"],
                 cwd=cwd,
+                enable_file_checkpointing=True,
             )
             async with ClaudeSDKClient(options=options) as client:
                 await client.query(prompt=prompt)

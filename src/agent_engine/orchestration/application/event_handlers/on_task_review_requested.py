@@ -13,7 +13,7 @@ class OnTaskReviewRequested:
     review_task_use_case: ReviewTask
 
     async def handle_review_task(self, event: TaskReviewRequested):
-        logger.info(f"处理任务评审请求事件: {event}")
+        logger.info(f"处理任务评审请求事件: {event.task_id}")
         command = ReviewTaskCommand(
             task_id=str(event.task_id),
             parent_id=event.parent_id,

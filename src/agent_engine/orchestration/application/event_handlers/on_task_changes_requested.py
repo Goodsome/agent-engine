@@ -13,7 +13,7 @@ class OnTaskChangesRequested:
     revise_task_use_case: ReviseTask
 
     async def handle_changes_requested(self, event: TaskChangesRequested):
-        logger.info(f"处理任务变更请求事件: {event}")
+        logger.info(f"处理任务变更请求事件: {event.task_id}")
         command = ReviseTaskCommand(
             task_id=str(event.task_id),
         )

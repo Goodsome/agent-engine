@@ -40,7 +40,10 @@ class DispatchTask:
 
     async def execute(self, command: DispatchTaskCommand) -> DispatchTaskResult:
         # 1. 获取 Agent Profile
-        profile = self.agent_profile_query_service.get_profile(command.scope_level)
+        profile = self.agent_profile_query_service.get_profile(
+            command.scope_level,
+            architecture_layer=command.architecture_layer
+        )
         
         # 2. 拼成 system_prompt
         system_prompt = self._build_system_prompt(profile)

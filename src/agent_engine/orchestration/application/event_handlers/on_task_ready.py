@@ -12,7 +12,7 @@ class OnTaskReady:
     dispatch_task_use_case: DispatchTask
 
     async def handle_dispatch_task(self, event: TaskReady):
-        logger.info(f"处理任务就绪事件，准备执行任务: {event}")
+        logger.info(f"处理任务就绪事件，准备执行任务: {event.task_id}")
         context_payload = {
             "task_id": str(event.task_id),
             "project_id": str(event.project_id),
@@ -27,6 +27,7 @@ class OnTaskReady:
             project_id=str(event.project_id),
             scope_level=event.scope_level,
             context_payload=context_payload,
+            architecture_layer=event.architecture_layer,
         )
         
         result = await self.dispatch_task_use_case.execute(command)
