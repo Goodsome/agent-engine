@@ -5,5 +5,9 @@ from agent_engine.agent_registry.application.dtos.agent_profile import AgentProf
 
 class AgentProfileQueryService(ABC):
     @abstractmethod
-    def get_profile(self, scope_level: str) -> AgentProfile:
+    def get_profile(
+        self, 
+        scope_level: str,
+        architecture_layer: str | None = None,
+    ) -> AgentProfile:
         pass

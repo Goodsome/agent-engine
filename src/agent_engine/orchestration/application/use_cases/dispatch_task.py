@@ -18,6 +18,7 @@ class DispatchTaskCommand(BaseModel):
     task_id: str
     project_id: str
     scope_level: str
+    architecture_layer: str | None = None
     context_payload: dict[str, str | None] = Field(default_factory=dict)
 
 
@@ -89,7 +90,7 @@ class DispatchTask:
             profile.role_prompt,
         ]
         if profile.rules:
-            prompt_parts.append("\nRules:")
+            prompt_parts.append("\nSPECIFIC_RULES:")
             for key, val in profile.rules.items():
                 prompt_parts.append(f"- {key}: {val}")
         return "\n".join(prompt_parts)

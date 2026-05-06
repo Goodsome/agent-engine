@@ -13,7 +13,7 @@ class Container(containers.DeclarativeContainer):
     config: Configuration = Configuration()
 
     # 默认路径指向上下文内部的 sops 目录
-    default_sops_dir: str = str(Path(agent_engine.__file__).parent / "agent_registry" / "sops")
+    default_sops_dir: Path = Path(agent_engine.__file__).parent / "agent_registry" / "sops"
 
     agent_profile_query_service: Factory[LocalAgentProfileQueryService] = Factory(
         LocalAgentProfileQueryService,
