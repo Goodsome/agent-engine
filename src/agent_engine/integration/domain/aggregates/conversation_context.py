@@ -1,10 +1,10 @@
-from agent_engine.shared.models import Aggregate
+from agent_engine.shared.domain.core.aggregate_root import AggregateRoot
 from pydantic import Field
 from agent_engine.integration.domain.value_objects.chat_id import ChatId
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 
 
-class ConversationContext(Aggregate):
+class ConversationContext(AggregateRoot):
     """聚合根 - 飞书会话的对话上下文，用于多轮对话记忆"""
 
     chat_id: ChatId

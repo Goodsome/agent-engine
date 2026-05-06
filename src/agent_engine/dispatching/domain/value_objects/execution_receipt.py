@@ -1,4 +1,4 @@
-from agent_engine.shared.models import ValueObject
+from agent_engine.shared.domain.core.value_object import ValueObject
 from agent_engine.dispatching.domain.enums import DispatchStatus
 
 class ExecutionReceipt(ValueObject):

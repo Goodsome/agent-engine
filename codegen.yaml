@@ -59,8 +59,6 @@ contexts:
     aggregates:
     - name: ConversationContext
       description: 聚合根 - 飞书会话的对话上下文，用于多轮对话记忆
-      base_types:
-      - Aggregate
       attributes:
       - type: ChatId
         name: chat_id
@@ -568,8 +566,6 @@ contexts:
     aggregates:
     - name: AgentSession
       description: 聚合根 — 一次完整的 Agent 运行生命周期，包括 Prompt 组装、工具挂载和最终输出。
-      base_types:
-      - Aggregate
       attributes:
       - type: SessionId
         name: id

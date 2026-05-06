@@ -1,5 +1,5 @@
 from typing import Optional
-from agent_engine.shared.models import ValueObject
+from agent_engine.shared.domain.core.value_object import ValueObject
 from agent_engine.integration.domain.value_objects.chat_id import ChatId
 from agent_engine.integration.domain.enums import ChatType
 from agent_engine.integration.domain.value_objects.feishu_message_id import (
