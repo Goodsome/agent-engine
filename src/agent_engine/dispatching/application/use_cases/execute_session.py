@@ -1,4 +1,5 @@
-import logging 
+import logging
+from pathlib import Path 
 from pydantic import BaseModel, Field
 from dataclasses import dataclass
 
@@ -35,6 +36,12 @@ class ExecuteSession:
     async def execute(self, command: ExecuteSessionCommand) -> ExecuteSessionResult:
         # 在此处可以增加校验、重试逻辑或超时控制（如果底层适配器未实现）
         logger.info(f"Executing session: {command.session_id}")
+        if command.project_id:
+            cwd = Path("/Users/xxxx/Projects") / command.project_id
+            if not cwd.exists():
+                cwd = None
+        else:
+            cwd = None
         receipt = await self.executor.execute(
             system_prompt=command.system_prompt,
             user_prompt=command.user_prompt,
@@ -42,6 +49,7 @@ class ExecuteSession:
             model_tier=command.model_tier,
             tools=command.tools,
             context_payload=command.context_payload,
+            cwd=cwd
         )
         return ExecuteSessionResult(
             status=receipt.status,
