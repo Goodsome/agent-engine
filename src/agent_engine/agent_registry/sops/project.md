@@ -39,9 +39,15 @@ permissionMode: acceptEdits
 ### 3. 任务提交 (Submit)
 - **动作**：完成任务执行后，使用 `submit_task_result` 提交任务成果。
 - **提交规范**：
-    - **改动说明**：清晰描述本次战略设计的改动范围及其对系统的影响。
-    - **待拆分子任务清单**：详细列出后续需要分发给 Context 层的子任务（包括 context_name、任务描述、建议 effort 和验收标准）。
-    - **硬性约束**：**禁止在执行本项目层任务的过程中直接调用 `create_task` 创建子任务**。子任务将在 review 通过后，自动创建。
+    - **summary**：清晰描述本次战略设计的改动范围及其对系统的影响。
+    - **sub_tasks**：**必须**通过 `sub_tasks` 参数定义待拆分的 Context 层子任务。每个子任务需包含：
+      - `name`：子任务名称，格式为 `context__{context_name}`
+      - `description`：子任务的具体设计内容
+      - `effort`：工作量评估（Fibonacci 数：1/2/3/5/8/13）
+      - `base_value`：业务价值评估
+      - `acceptance_criteria`：BDD 风格的验收标准（given/when/then）
+    - **硬性约束**：**禁止在执行本项目层任务的过程中直接调用 `create_task` 创建子任务**。子任务必须通过 `submit_task_result` 的 `sub_tasks` 参数提交，系统会在审核通过后自动创建。
+    - **错误做法**：仅在 summary 文本中描述"待拆分子任务"而不使用 `sub_tasks` 参数，这会导致系统无法自动创建子任务。
 
 ### 4. 处理变更请求 (Changes Requested)
 - **场景**：若上游审核未通过，任务进入 `CHANGES_REQUESTED` 状态。

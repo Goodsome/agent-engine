@@ -48,9 +48,15 @@ permissionMode: acceptEdits
 ### 3. 任务提交 (Submit)
 - **动作**：元模型设计完成、验证符合 Schema 并成功生成骨架后，使用 `submit_task_result` 提交。
 - **提交规范**：
-    - **建模说明**：详细说明本次修改了 `codegen.yaml` 中的哪些节点，以及组件的依赖关系。
-    - **待拆分子任务清单**：列出后续需要分发给 Component 层的子任务（标明目标组件名、核心验收规则与工作量 Effort）。
-    - **禁止行为**：**严禁在本层任务执行期间直接调用 `create_task` 创建子任务**。拆分计划由上游审核通过后由系统自动创建。
+    - **summary**：详细说明本次修改了 `codegen.yaml` 中的哪些节点，以及组件的依赖关系。
+    - **sub_tasks**：**必须**通过 `sub_tasks` 参数定义待拆分的 Component 层子任务。每个子任务需包含：
+      - `name`：子任务名称，必须为组件名
+      - `description`：子任务的具体实现内容
+      - `effort`：工作量评估（Fibonacci 数：1/2/3/5/8/13）
+      - `base_value`：业务价值评估
+      - `acceptance_criteria`：BDD 风格的验收标准（given/when/then）
+    - **禁止行为**：**严禁在本层任务执行期间直接调用 `create_task` 创建子任务**。子任务必须通过 `submit_task_result` 的 `sub_tasks` 参数提交，系统会在审核通过后自动创建。
+    - **错误做法**：仅在 summary 文本中描述"待拆分子任务"而不使用 `sub_tasks` 参数，这会导致系统无法自动创建子任务。
 
 ### 4. 处理变更请求 (Changes Requested)
 - **场景**：若上游审核你的模型设计未通过，任务进入 `CHANGES_REQUESTED` 状态。

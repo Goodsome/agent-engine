@@ -78,10 +78,16 @@ permissionMode: acceptEdits
 ### 3. 任务提交 (Submit)
 - **动作**：完成设计文档更新后，使用 `submit_task_result` 提交成果。
 - **提交规范**：
-    - **实现说明**：详细描述本次业务规约或技术设计的变更逻辑。
-    - **待拆分子任务清单**：列出后续需要分发给 Architectural Agents 的子任务。
+    - **summary**：详细描述本次业务规约或技术设计的变更逻辑。
+    - **sub_tasks**：**必须**通过 `sub_tasks` 参数定义待拆分的子任务。每个子任务需包含：
+      - `name`：子任务名称，必须为架构层名（domain/application/infrastructure/interfaces/cross_cutting）
+      - `description`：子任务的具体实现内容
+      - `effort`：工作量评估（Fibonacci 数：1/2/3/5/8/13）
+      - `base_value`：业务价值评估
+      - `acceptance_criteria`：BDD 风格的验收标准（given/when/then）
     - **依赖约束**：子任务必须遵循 DDD 核心向外延伸的原则，构建 `dependencies` 时必须满足以下链路：`domain -> (application/infrastructure) -> interfaces`。
-    - **禁止行为**：**严禁在本层任务执行期间直接调用 `create_task` 创建子任务**。任务拆分标准应在提交成果中声明，由上游审核通过后自动或由系统接管拆解。
+    - **禁止行为**：**严禁在本层任务执行期间直接调用 `create_task` 创建子任务**。子任务必须通过 `submit_task_result` 的 `sub_tasks` 参数提交，系统会在审核通过后自动创建。
+    - **错误做法**：仅在 summary 文本中描述"待拆分子任务"而不使用 `sub_tasks` 参数，这会导致系统无法自动创建子任务。
 
 ### 4. 处理变更请求 (Changes Requested)
 - **场景**：若战略架构师（上游）审核未通过，任务进入 `CHANGES_REQUESTED` 状态。
