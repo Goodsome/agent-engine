@@ -1,3 +1,4 @@
+import traceback
 import logging
 import json
 from pathlib import Path
@@ -59,12 +60,13 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
         output_text: list[str] = []
 
         try:
-            # 检查会话是否存在以决定是 resume 还是新开 session
             session_info = get_session_info(session_id)
-            # 如果会话已存在，使用 resume 恢复并置 session_id 为 None；
-            # 否则使用 session_id 指定新会话 ID 并置 resume 为 None。
             resume_val = session_id if session_info else None
             sid_val = None if session_info else session_id
+
+            if session_info and session_info.cwd:
+                cwd = Path(session_info.cwd)
+                
             options = ClaudeAgentOptions(
                 session_id=sid_val,
                 resume=resume_val,
@@ -74,7 +76,6 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
                 setting_sources=["user", "project"],
                 cwd=cwd,
                 enable_file_checkpointing=True,
-                skills=["codegen"]
             )
             async with ClaudeSDKClient(options=options) as client:
                 await client.query(prompt=prompt)
@@ -103,7 +104,7 @@ class ClaudeAgentExecutorAdapter(AgentExecutorPort):
         except Exception as e:
             stderr_msg = "".join(self._stderr_output)
             error_detail = f"{e}\nStderr: {stderr_msg}" if stderr_msg else str(e)
-            logger.error(f"Claude execution failed: {error_detail}")
+            logger.error(f"Claude execution failed: {error_detail}.\n{traceback.format_exc()}")
             return ExecutionReceipt(
                 status=DispatchStatus.FAULT,
                 fault=error_detail
