@@ -48,13 +48,9 @@ permissionMode: acceptEdits
   - **职责**：系统的外部触点（如 API 路由、SDK Facade、CLI 命令）。负责参数的序列化/反序列化。
   - **约束（强制要求）**：每一个对外暴露的接口（Interface），必须且只能映射到一个具体的 Application 层用例。严禁绕过 Application 层直接调用 Domain/Infrastructure 层。
 
-- **Cross-Cutting 层 (横切关注点)**：
-  - **职责**：提供全局正交的基础能力支撑，如日志记录 (Logging)、配置管理 (Configuration)、全局异常处理 (Exception Handling)、链路追踪 (Tracing) 和认证授权抽象。
-  - **约束**：严禁包含任何业务逻辑。它应当作为通用工具或拦截器/中间件存在，其他所有层（Domain, Application, Infrastructure, Interfaces）都可以依赖它，但它不应反向依赖其他层的具体实现。
-
 ### 任务拆分执行规范 (Task Splitting Execution)
 - 根据任务描述，评估涉及的架构层范围。为每个受影响的架构层（`cross_cutting`, `domain`, `application`, `infrastructure`, `interfaces`）设计专属子任务。
-- **依赖传递**：子任务必须遵循向外延伸的原则构建 `dependencies`，链路通常为：`cross_cutting -> domain -> infrastructure -> application -> interfaces`（注意：Cross-Cutting 是最底层的支撑，Domain 层也可能需要依赖它的纯接口，如日志抽象）。
+- **依赖传递**：子任务必须遵循向外延伸的原则构建 `dependencies`，链路通常为：`domain -> infrastructure -> application -> interfaces`。
 - **验收标准传递**：当前任务的 BDD 验收标准（given/when/then）必须被精确拆分到对应层的子任务中。
   - Domain 层验收标准关注：实体状态变更、业务规则校验。
   - Application 层验收标准关注：用例流程的完整执行、仓储调用、事务边界控制。
