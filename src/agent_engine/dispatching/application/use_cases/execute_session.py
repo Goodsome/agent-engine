@@ -38,8 +38,6 @@ class ExecuteSession:
         logger.info(f"Executing session: {command.session_id}")
         if command.project_id:
             cwd = Path("/Users/xxxx/Projects") / command.project_id
-            if not cwd.exists():
-                cwd = None
         else:
             cwd = None
         receipt = await self.executor.execute(
