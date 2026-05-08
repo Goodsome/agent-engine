@@ -814,6 +814,43 @@ contexts:
           name: cwd
         output:
           type: ExecutionReceipt
+    domain_exceptions:
+    - name: ProjectNotFound
+      description: 项目未找到异常：当请求的 ProjectId 对应的项目不存在时抛出
+      attributes:
+      - type: string
+        name: project_id
+    services:
+    - name: WorkspaceManager
+      description: '领域服务 — 管理项目工作目录的映射与解析。将项目与工作目录之间的映射规则作为领域概念内化，
+        封装根据 ProjectId 获取对应文件系统工作路径的业务逻辑。'
+      dependencies:
+      - type: Path
+        name: root_dir
+      operations:
+      - name: get_workspace
+        description: "根据 ProjectId 获取项目的工作目录\n\nArgs:\n    project_id: 项目标识\n\
+          \nReturns:\n    项目对应的工作目录绝对路径\n\nRaises:\n    ProjectNotFound: 当项目不存在时抛出"
+        inputs:
+        - type: Self
+          name: self
+        - type: ProjectId
+          name: project_id
+        output:
+          type: Path
+        rules:
+        - name: 获取已存在项目的工作目录
+          given: 系统中存在一个 ProjectId 为 "agent-engine" 的项目
+          when: WorkspaceManager 使用该 ProjectId 获取工作目录
+          then: 应返回该项目对应的文件系统路径（Path 类型）
+        - name: 获取不存在项目的工作目录
+          given: 系统中不存在 ProjectId 为 "nonexistent-project" 的项目
+          when: WorkspaceManager 使用该 ProjectId 获取工作目录
+          then: 应抛出 ProjectNotFound 异常
+        - name: 返回路径的有效性
+          given: 系统中存在任意有效项目
+          when: WorkspaceManager 获取该项目的工作目录
+          then: 返回的路径应为绝对路径且可访问
   application:
     use_cases:
     - name: ExecuteSession
