@@ -9,21 +9,12 @@
 - **Error Handler (异常处理器)**：捕获底层异常并映射为协议层可理解的状态（如 HTTP 状态码、CLI 退出码）。
 - **Middleware / Interceptor (中间件/拦截器)**：横切关注点的处理（如认证、日志、限流）。
 
-#### 2. 协议适配约束 (Protocol Adaptation)
-- **HTTP 端点**：必须定义 HTTP Method、路径、状态码映射。成功返回 2xx，客户端错误返回 4xx，服务端错误返回 5xx。
-- **CLI 端点**：必须定义命令名称、参数解析规则、退出码映射。
-- **唯一协议感知层**：接口层是系统中唯一可以处理 HTTP 头信息、URL 路径参数、状态码、或 CLI 参数的层级。
-
-#### 3. 异常映射规范 (Exception Mapping)
-接口层必须将底层异常映射为协议层友好的响应：
-- `DomainException` → 业务校验失败 → HTTP 400 / CLI Exit Code 2
-- `NotFoundException` → 资源不存在 → HTTP 404 / CLI Exit Code 3
-- `UnauthorizedException` → 权限不足 → HTTP 401 / CLI Exit Code 4
-- 未捕获异常 → 系统内部错误 → HTTP 500 / CLI Exit Code 1
-
-#### 4. 接口层子任务拆分准则 (Interfaces Component Split)
+#### 2. 接口层子任务拆分准则 (Interfaces Component Split)
 在进行 `scope_level="component"` 的拆分时：
 - **必须拆分**：包含复杂路由逻辑、多条件异常映射、或需要人工实现协议适配的 `endpoint`。
+- **横切关注点 (Cross-Cutting Concerns)**：以下组件涉及接口层的装配与集成，必须单独拆分为子任务：
+  - **路由注册与绑定**：将 Endpoint 注册到对应的协议框架（如 FastAPI Router、CLI 命令组），确保请求能正确路由到处理器。
+  - **中间件配置**：注册并排序 Middleware/Interceptor（如认证、日志、异常处理），确保横切逻辑按预期顺序执行。
 - **免拆分例外 (Auto-generated)**：
   - 简单的 `request_schema`、`response_schema`，如果没有自定义校验规则或复杂的字段转换，**不需要**创建子任务，由骨架生成器自动接管。
   - 纯数据模型通常无需人工干预。
