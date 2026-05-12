@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from event_hub.integration_events import TaskChangesRequested
 from agent_engine.orchestration.application.use_cases.revise_task import ReviseTask
-from agent_engine.orchestration.application.use_cases.revise_task import ReviseTaskCommand
+from agent_engine.orchestration.application.dtos.revise_task_command import ReviseTaskCommand
 
 logger = logging.getLogger(__name__)
 

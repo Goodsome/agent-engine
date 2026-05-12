@@ -7,10 +7,8 @@ import typer
 from rich.console import Console
 from dependency_injector.wiring import Provide, inject
 
-from agent_engine.dispatching.application.use_cases.execute_session import (
-    ExecuteSession,
-    ExecuteSessionCommand,
-)
+from agent_engine.dispatching.application.use_cases.execute_session import ExecuteSession
+from agent_engine.dispatching.application.dtos.execute_session_command import ExecuteSessionCommand
 from agent_engine.dispatching.domain.enums import DispatchStatus
 from agent_engine.shared.domain.enums import ModelTier
 

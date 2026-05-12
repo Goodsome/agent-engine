@@ -44,6 +44,24 @@ contexts:
           name: architecture_layer
         output:
           type: AgentProfile
+    dtos:
+    - name: AgentProfile
+      description: ''
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        name: scope_level
+      - type: string
+        name: role_name
+      - type: string
+        name: description
+      - type: string
+        name: role_prompt
+      - type: string
+        container: map
+        name: rules
+        default: dict
   infrastructure:
     implementations:
     - name: LocalAgentProfileQueryService
@@ -144,6 +162,12 @@ contexts:
           name: value
         output:
           type: ChatId
+      - name: __str__
+        inputs:
+        - type: Self
+          name: self
+        output:
+          type: string
       - name: serialize
         inputs:
         - type: Self
@@ -190,6 +214,12 @@ contexts:
           name: value
         output:
           type: FeishuMessageId
+      - name: __str__
+        inputs:
+        - type: Self
+          name: self
+        output:
+          type: string
       - name: serialize
         inputs:
         - type: Self
@@ -316,6 +346,23 @@ contexts:
         name: execute_session
       - type: ConversationContextRepository
         name: context_repo
+    dtos:
+    - name: HandleFeishuMessageCommand
+      description: ''
+      base_types:
+      - BaseModel
+      attributes:
+      - type: FeishuMessagePayload
+        name: payload
+    - name: HandleFeishuMessageResult
+      description: ''
+      base_types:
+      - BaseModel
+      attributes:
+      - type: FeishuMessageId
+        name: reply_message_id
+      - type: SessionId
+        name: session_id
   infrastructure:
     implementations:
     - name: SqlAlchemyConversationContextRepository
@@ -461,8 +508,14 @@ contexts:
           container: type
           name: cls
         - type: Any
-          custom_type_string: Union[UUID, str]
+          custom_type_string: UUID | str
           name: value
+        output:
+          type: any
+      - name: __str__
+        inputs:
+        - type: Self
+          name: self
         output:
           type: any
       - name: serialize
@@ -504,8 +557,14 @@ contexts:
           container: type
           name: cls
         - type: Any
-          custom_type_string: Union[UUID, str]
+          custom_type_string: UUID | str
           name: value
+        output:
+          type: any
+      - name: __str__
+        inputs:
+        - type: Self
+          name: self
         output:
           type: any
       - name: serialize
@@ -542,8 +601,14 @@ contexts:
           container: type
           name: cls
         - type: Any
-          custom_type_string: Union[UUID, str]
+          custom_type_string: UUID | str
           name: value
+        output:
+          type: any
+      - name: __str__
+        inputs:
+        - type: Self
+          name: self
         output:
           type: any
       - name: serialize
@@ -752,6 +817,89 @@ contexts:
         name: session_repository
       - type: ExecuteSession
         name: execute_session_use_case
+    dtos:
+    - name: DispatchTaskCommand
+      description: 调度任务指令：描述了要由哪个 Agent 执行哪个任务
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        name: task_id
+      - type: string
+        name: project_id
+      - type: string
+        name: scope_level
+      - type: string
+        optional: true
+        name: architecture_layer
+      - type: Any
+        custom_type_string: dict[str, str | None]
+        name: context_payload
+        default: dict
+    - name: DispatchTaskResult
+      description: 调度任务结果 DTO
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        name: session_id
+      - type: string
+        name: status
+      - type: string
+        optional: true
+        name: output
+      - type: string
+        optional: true
+        name: fault
+    - name: ReviewTaskCommand
+      description: 审核任务指令
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        name: task_id
+      - type: string
+        optional: true
+        name: parent_id
+    - name: ReviewTaskResult
+      description: 审核任务结果 DTO
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        optional: true
+        name: session_id
+      - type: string
+        name: status
+      - type: string
+        optional: true
+        name: output
+      - type: string
+        optional: true
+        name: fault
+    - name: ReviseTaskCommand
+      description: 重新修改任务指令
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        name: task_id
+    - name: ReviseTaskResult
+      description: 重新修改任务结果 DTO
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        optional: true
+        name: session_id
+      - type: string
+        name: status
+      - type: string
+        optional: true
+        name: output
+      - type: string
+        optional: true
+        name: fault
   infrastructure:
     implementations:
     - name: SqlAlchemySessionRepository
@@ -783,6 +931,42 @@ contexts:
       - type: string
         optional: true
         name: fault
+    services:
+    - name: WorkspaceManager
+      description: '领域服务 — 管理项目工作目录的映射与解析。
+
+
+        将项目与工作目录之间的映射规则作为领域概念内化，
+
+        封装根据 ProjectId 获取对应文件系统工作路径的业务逻辑。'
+      dependencies:
+      - type: Path
+        name: root_dir
+      operations:
+      - name: get_workspace
+        description: "根据项目标识解析并返回工作目录路径。\n\nArgs:\n    project_id: 目标项目的唯一标识。\n\n\
+          Returns:\n    该项目对应的绝对文件系统路径。\n\nRaises:\n    ProjectNotFound: 当 root_dir\
+          \ 下不存在与 project_id 对应的目录时。"
+        inputs:
+        - type: Self
+          name: self
+        - type: ProjectId
+          name: project_id
+        output:
+          type: Path
+        rules:
+        - name: 获取已存在项目的工作目录
+          given: 系统中存在一个 ProjectId 为 "agent-engine" 的项目
+          when: WorkspaceManager 使用该 ProjectId 获取工作目录
+          then: 应返回该项目对应的文件系统路径（Path 类型）
+        - name: 获取不存在项目的工作目录
+          given: 系统中不存在 ProjectId 为 "nonexistent-project" 的项目
+          when: WorkspaceManager 使用该 ProjectId 获取工作目录
+          then: 应抛出 ProjectNotFound 异常
+        - name: 返回路径的有效性
+          given: 系统中存在任意有效项目
+          when: WorkspaceManager 获取该项目的工作目录
+          then: 返回的路径应为绝对路径且可访问
     ports:
     - name: AgentExecutorPort
       description: Agent 执行器接口：负责与底层模型 CLI 或 SDK 交互
@@ -820,37 +1004,6 @@ contexts:
       attributes:
       - type: string
         name: project_id
-    services:
-    - name: WorkspaceManager
-      description: '领域服务 — 管理项目工作目录的映射与解析。将项目与工作目录之间的映射规则作为领域概念内化，
-        封装根据 ProjectId 获取对应文件系统工作路径的业务逻辑。'
-      dependencies:
-      - type: Path
-        name: root_dir
-      operations:
-      - name: get_workspace
-        description: "根据 ProjectId 获取项目的工作目录\n\nArgs:\n    project_id: 项目标识\n\
-          \nReturns:\n    项目对应的工作目录绝对路径\n\nRaises:\n    ProjectNotFound: 当项目不存在时抛出"
-        inputs:
-        - type: Self
-          name: self
-        - type: ProjectId
-          name: project_id
-        output:
-          type: Path
-        rules:
-        - name: 获取已存在项目的工作目录
-          given: 系统中存在一个 ProjectId 为 "agent-engine" 的项目
-          when: WorkspaceManager 使用该 ProjectId 获取工作目录
-          then: 应返回该项目对应的文件系统路径（Path 类型）
-        - name: 获取不存在项目的工作目录
-          given: 系统中不存在 ProjectId 为 "nonexistent-project" 的项目
-          when: WorkspaceManager 使用该 ProjectId 获取工作目录
-          then: 应抛出 ProjectNotFound 异常
-        - name: 返回路径的有效性
-          given: 系统中存在任意有效项目
-          when: WorkspaceManager 获取该项目的工作目录
-          then: 返回的路径应为绝对路径且可访问
   application:
     use_cases:
     - name: ExecuteSession
@@ -889,6 +1042,45 @@ contexts:
       dependencies:
       - type: AgentExecutorPort
         name: executor
+    dtos:
+    - name: ExecuteSessionCommand
+      description: 执行会话指令：包含执行 Agent 所需的所有数据
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        name: system_prompt
+      - type: string
+        name: user_prompt
+      - type: string
+        name: session_id
+      - type: string
+        optional: true
+        name: project_id
+      - type: ModelTier
+        optional: true
+        name: model_tier
+      - type: string
+        container: list
+        name: tools
+        default: 'lambda: [''Read'', ''Edit'', ''Glob'']'
+      - type: Any
+        custom_type_string: dict[str, str | None]
+        name: context_payload
+        default: dict
+    - name: ExecuteSessionResult
+      description: 执行会话结果 DTO
+      base_types:
+      - BaseModel
+      attributes:
+      - type: DispatchStatus
+        name: status
+      - type: string
+        optional: true
+        name: output
+      - type: string
+        optional: true
+        name: fault
   infrastructure:
     implementations:
     - name: ClaudeAgentExecutorAdapter

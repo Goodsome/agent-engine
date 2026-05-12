@@ -1,7 +1,6 @@
 import asyncio
 import json
 import psycopg
-from datetime import datetime
 
 from agent_engine.config import get_settings
 

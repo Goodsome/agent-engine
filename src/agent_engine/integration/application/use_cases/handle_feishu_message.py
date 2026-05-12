@@ -6,30 +6,14 @@ from agent_engine.integration.domain.aggregates.conversation_context import (
 from agent_engine.integration.domain.ports.conversation_context_repository import (
     ConversationContextRepository,
 )
-from agent_engine.integration.domain.value_objects.feishu_message_payload import (
-    FeishuMessagePayload,
-)
-from agent_engine.dispatching.application.use_cases.execute_session import (
-    ExecuteSession,
-    ExecuteSessionCommand,
-)
+from agent_engine.dispatching.application.use_cases.execute_session import ExecuteSession
+from agent_engine.dispatching.application.dtos.execute_session_command import ExecuteSessionCommand
 from agent_engine.dispatching.domain.enums import DispatchStatus
 from agent_engine.shared.domain.value_objects.session_id import SessionId
 from agent_engine.integration.domain.ports.feishu_client_port import FeishuClientPort
-from pydantic import BaseModel
-from agent_engine.integration.domain.value_objects.feishu_message_id import (
-    FeishuMessageId,
-)
+from agent_engine.integration.application.dtos.handle_feishu_message_command import HandleFeishuMessageCommand
+from agent_engine.integration.application.dtos.handle_feishu_message_result import HandleFeishuMessageResult
 from agent_engine.integration.domain.enums import ChatType
-
-
-class HandleFeishuMessageCommand(BaseModel):
-    payload: FeishuMessagePayload
-
-
-class HandleFeishuMessageResult(BaseModel):
-    reply_message_id: FeishuMessageId
-    session_id: SessionId
 
 
 @dataclass

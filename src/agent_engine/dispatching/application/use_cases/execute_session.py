@@ -1,30 +1,12 @@
 import logging
-from pathlib import Path 
-from pydantic import BaseModel, Field
+from pathlib import Path
 from dataclasses import dataclass
 
 from agent_engine.dispatching.domain.ports.agent_executor_port import AgentExecutorPort
-from agent_engine.dispatching.domain.enums import DispatchStatus
-from agent_engine.shared.domain.enums import ModelTier
+from agent_engine.dispatching.application.dtos.execute_session_command import ExecuteSessionCommand
+from agent_engine.dispatching.application.dtos.execute_session_result import ExecuteSessionResult
 
 logger = logging.getLogger(__name__)
-
-class ExecuteSessionCommand(BaseModel):
-    """执行会话指令：包含执行 Agent 所需的所有数据"""
-    system_prompt: str
-    user_prompt: str
-    session_id: str
-    project_id: str | None = None
-    model_tier: ModelTier | None = None
-    tools: list[str] = Field(default_factory=lambda: ["Read", "Edit", "Glob"])
-    context_payload: dict[str, str | None] = Field(default_factory=dict)
-
-
-class ExecuteSessionResult(BaseModel):
-    """执行会话结果 DTO"""
-    status: DispatchStatus
-    output: str | None = None
-    fault: str | None = None
 
 
 @dataclass
