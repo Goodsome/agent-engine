@@ -318,15 +318,6 @@ contexts:
   application:
     use_cases:
     - name: HandleFeishuMessage
-      kind: command
-      inputs:
-      - type: FeishuMessagePayload
-        name: payload
-      outputs:
-      - type: FeishuMessageId
-        name: reply_message_id
-      - type: SessionId
-        name: session_id
       description: '处理飞书消息 - 非流式响应
 
 
@@ -339,21 +330,41 @@ contexts:
         3. 根据聊天类型路由回复 (P2P 发送新消息, GROUP 回复消息)
 
         4. 更新会话上下文'
-      dependencies:
+      attributes:
       - type: FeishuClientPort
         name: feishu_client
       - type: ExecuteSession
         name: execute_session
       - type: ConversationContextRepository
         name: context_repo
+      behaviors:
+      - name: execute
+        inputs:
+        - type: Self
+          name: self
+        - type: HandleFeishuMessageCommand
+          name: cmd
+        output:
+          type: HandleFeishuMessageResult
+      - name: _build_system_prompt
+        description: 构建包含对话历史的 system prompt
+        inputs:
+        - type: Self
+          name: self
+        - type: ConversationContext
+          name: context
+        output:
+          type: string
+      - name: _format_response
+        description: 格式化飞书消息内容
+        inputs:
+        - type: Self
+          name: self
+        - type: string
+          name: text
+        output:
+          type: string
     dtos:
-    - name: HandleFeishuMessageCommand
-      description: ''
-      base_types:
-      - BaseModel
-      attributes:
-      - type: FeishuMessagePayload
-        name: payload
     - name: HandleFeishuMessageResult
       description: ''
       base_types:
@@ -363,6 +374,13 @@ contexts:
         name: reply_message_id
       - type: SessionId
         name: session_id
+    - name: HandleFeishuMessageCommand
+      description: ''
+      base_types:
+      - BaseModel
+      attributes:
+      - type: FeishuMessagePayload
+        name: payload
   infrastructure:
     implementations:
     - name: SqlAlchemyConversationContextRepository
@@ -734,108 +752,64 @@ contexts:
   application:
     use_cases:
     - name: DispatchTask
-      kind: query
-      inputs:
-      - type: string
-        name: task_id
-      - type: string
-        name: project_id
-      - type: string
-        name: scope_level
-      - type: string
-        optional: true
-        name: architecture_layer
-      - type: Any
-        custom_type_string: dict[str, str | None]
-        name: context_payload
-        default: dict
-      outputs:
-      - type: string
-        name: session_id
-      - type: string
-        name: status
-      - type: string
-        optional: true
-        name: output
-      - type: string
-        optional: true
-        name: fault
       description: Orchestration 应用层用例：调度任务执行
-      dependencies:
+      attributes:
       - type: AgentProfileQueryService
         name: agent_profile_query_service
       - type: ExecuteSession
         name: execute_session_use_case
       - type: AgentSessionRepository
         name: session_repository
+      behaviors:
+      - name: execute
+        inputs:
+        - type: Self
+          name: self
+        - type: DispatchTaskCommand
+          name: command
+        output:
+          type: DispatchTaskResult
+      - name: _build_system_prompt
+        inputs:
+        - type: Self
+          name: self
+        - type: AgentProfile
+          name: profile
+        output:
+          type: string
     - name: ReviewTask
-      kind: query
-      inputs:
-      - type: string
-        name: task_id
-      - type: string
-        optional: true
-        name: parent_id
-      outputs:
-      - type: string
-        optional: true
-        name: session_id
-      - type: string
-        name: status
-      - type: string
-        optional: true
-        name: output
-      - type: string
-        optional: true
-        name: fault
       description: Orchestration 应用层用例：审核任务
-      dependencies:
-      - type: AgentSessionRepository
-        name: session_repository
-      - type: ExecuteSession
-        name: execute_session_use_case
-    - name: ReviseTask
-      kind: query
-      inputs:
-      - type: string
-        name: task_id
-      outputs:
-      - type: string
-        optional: true
-        name: session_id
-      - type: string
-        name: status
-      - type: string
-        optional: true
-        name: output
-      - type: string
-        optional: true
-        name: fault
-      description: Orchestration 应用层用例：任务审核不通过，重新修改
-      dependencies:
-      - type: AgentSessionRepository
-        name: session_repository
-      - type: ExecuteSession
-        name: execute_session_use_case
-    dtos:
-    - name: DispatchTaskCommand
-      description: 调度任务指令：描述了要由哪个 Agent 执行哪个任务
-      base_types:
-      - BaseModel
       attributes:
-      - type: string
-        name: task_id
-      - type: string
-        name: project_id
-      - type: string
-        name: scope_level
-      - type: string
-        optional: true
-        name: architecture_layer
-      - type: Any
-        custom_type_string: dict[str, str | None]
-        name: context_payload
-        default: dict
+      - type: AgentSessionRepository
+        name: session_repository
+      - type: ExecuteSession
+        name: execute_session_use_case
+      behaviors:
+      - name: execute
+        inputs:
+        - type: Self
+          name: self
+        - type: ReviewTaskCommand
+          name: command
+        output:
+          type: ReviewTaskResult
+    - name: ReviseTask
+      description: Orchestration 应用层用例：任务审核不通过，重新修改
+      attributes:
+      - type: AgentSessionRepository
+        name: session_repository
+      - type: ExecuteSession
+        name: execute_session_use_case
+      behaviors:
+      - name: execute
+        inputs:
+        - type: Self
+          name: self
+        - type: ReviseTaskCommand
+          name: command
+        output:
+          type: ReviseTaskResult
+    dtos:
     - name: DispatchTaskResult
       description: 调度任务结果 DTO
       base_types:
@@ -851,8 +825,26 @@ contexts:
       - type: string
         optional: true
         name: fault
-    - name: ReviewTaskCommand
-      description: 审核任务指令
+    - name: DispatchTaskQuery
+      description: ''
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        name: task_id
+      - type: string
+        name: project_id
+      - type: string
+        name: scope_level
+      - type: string
+        optional: true
+        name: architecture_layer
+      - type: Any
+        custom_type_string: dict[str, str | None]
+        name: context_payload
+        default: dict
+    - name: ReviewTaskQuery
+      description: ''
       base_types:
       - BaseModel
       attributes:
@@ -861,22 +853,6 @@ contexts:
       - type: string
         optional: true
         name: parent_id
-    - name: ReviewTaskResult
-      description: 审核任务结果 DTO
-      base_types:
-      - BaseModel
-      attributes:
-      - type: string
-        optional: true
-        name: session_id
-      - type: string
-        name: status
-      - type: string
-        optional: true
-        name: output
-      - type: string
-        optional: true
-        name: fault
     - name: ReviseTaskCommand
       description: 重新修改任务指令
       base_types:
@@ -900,6 +876,57 @@ contexts:
       - type: string
         optional: true
         name: fault
+    - name: ReviewTaskResult
+      description: 审核任务结果 DTO
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        optional: true
+        name: session_id
+      - type: string
+        name: status
+      - type: string
+        optional: true
+        name: output
+      - type: string
+        optional: true
+        name: fault
+    - name: ReviewTaskCommand
+      description: 审核任务指令
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        name: task_id
+      - type: string
+        optional: true
+        name: parent_id
+    - name: DispatchTaskCommand
+      description: 调度任务指令：描述了要由哪个 Agent 执行哪个任务
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        name: task_id
+      - type: string
+        name: project_id
+      - type: string
+        name: scope_level
+      - type: string
+        optional: true
+        name: architecture_layer
+      - type: Any
+        custom_type_string: dict[str, str | None]
+        name: context_payload
+        default: dict
+    - name: ReviseTaskQuery
+      description: ''
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        name: task_id
   infrastructure:
     implementations:
     - name: SqlAlchemySessionRepository
@@ -1007,44 +1034,22 @@ contexts:
   application:
     use_cases:
     - name: ExecuteSession
-      kind: query
-      inputs:
-      - type: string
-        name: system_prompt
-      - type: string
-        name: user_prompt
-      - type: string
-        name: session_id
-      - type: string
-        optional: true
-        name: project_id
-      - type: ModelTier
-        optional: true
-        name: model_tier
-      - type: string
-        container: list
-        name: tools
-        default: 'lambda: [''Read'', ''Edit'', ''Glob'']'
-      - type: Any
-        custom_type_string: dict[str, str | None]
-        name: context_payload
-        default: dict
-      outputs:
-      - type: DispatchStatus
-        name: status
-      - type: string
-        optional: true
-        name: output
-      - type: string
-        optional: true
-        name: fault
       description: Dispatching 上下文的应用层用例：接收指令并驱动执行器
-      dependencies:
+      attributes:
       - type: AgentExecutorPort
         name: executor
+      behaviors:
+      - name: execute
+        inputs:
+        - type: Self
+          name: self
+        - type: ExecuteSessionCommand
+          name: command
+        output:
+          type: ExecuteSessionResult
     dtos:
-    - name: ExecuteSessionCommand
-      description: 执行会话指令：包含执行 Agent 所需的所有数据
+    - name: ExecuteSessionQuery
+      description: ''
       base_types:
       - BaseModel
       attributes:
@@ -1081,6 +1086,31 @@ contexts:
       - type: string
         optional: true
         name: fault
+    - name: ExecuteSessionCommand
+      description: 执行会话指令：包含执行 Agent 所需的所有数据
+      base_types:
+      - BaseModel
+      attributes:
+      - type: string
+        name: system_prompt
+      - type: string
+        name: user_prompt
+      - type: string
+        name: session_id
+      - type: string
+        optional: true
+        name: project_id
+      - type: ModelTier
+        optional: true
+        name: model_tier
+      - type: string
+        container: list
+        name: tools
+        default: 'lambda: [''Read'', ''Edit'', ''Glob'']'
+      - type: Any
+        custom_type_string: dict[str, str | None]
+        name: context_payload
+        default: dict
   infrastructure:
     implementations:
     - name: ClaudeAgentExecutorAdapter
