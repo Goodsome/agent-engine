@@ -33,6 +33,6 @@ class WorkspaceManager:
         workspace = (self.root_dir / project_id.value).resolve()
 
         if not workspace.exists():
-            raise ProjectNotFound(project_id.value)
+            raise ProjectNotFound(project_id.value, root=self.root_dir)
 
         return workspace

@@ -1054,6 +1054,8 @@ contexts:
       attributes:
       - type: AgentExecutorPort
         name: executor
+      - type: WorkspaceManager
+        name: workspace_manager
       behaviors:
       - name: execute
         inputs:
@@ -1064,6 +1066,19 @@ contexts:
         output:
           type: ExecuteSessionResult
         is_async: true
+        rules:
+        - name: 使用有效 ProjectId 获取工作目录
+          given: ExecuteSession 依赖一个 WorkspaceManager 实例
+          when: 执行包含有效 project_id 的 ExecuteSessionCommand
+          then: 应通过 WorkspaceManager 解析工作目录，而非硬编码路径
+        - name: ProjectId 为空时工作目录为 None
+          given: ExecuteSession 依赖一个 WorkspaceManager 实例
+          when: 执行 project_id 为空的 ExecuteSessionCommand
+          then: 工作目录应为 None，不调用 WorkspaceManager
+        - name: WorkspaceManager 抛出异常时向上传播
+          given: WorkspaceManager 对某个 project_id 抛出 ProjectNotFound 异常
+          when: 执行包含该 project_id 的 ExecuteSessionCommand
+          then: 异常应向上传播，不被 ExecuteSession 吞没
     dtos:
     - name: ExecuteSessionQuery
       description: ''
