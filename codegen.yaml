@@ -242,6 +242,7 @@ contexts:
           name: content
         output:
           type: FeishuMessageId
+        is_async: true
       - name: reply_message
         description: "回复消息\n\nArgs:\n    message_id: 要回复的消息ID\n    content: 回复内容\n\
           \nReturns:\n    回复的消息ID"
@@ -254,6 +255,7 @@ contexts:
           name: content
         output:
           type: FeishuMessageId
+        is_async: true
       - name: update_message
         description: "更新消息内容（用于流式输出）\n\nArgs:\n    message_id: 要更新的消息ID\n    content:\
           \ 新的消息内容"
@@ -266,6 +268,7 @@ contexts:
           name: content
         output:
           type: None
+        is_async: true
       - name: set_message_handler
         description: "设置消息处理器\n\nArgs:\n    handler: 异步消息处理函数"
         inputs:
@@ -283,6 +286,7 @@ contexts:
           name: self
         output:
           type: None
+        is_async: true
     - name: ConversationContextRepository
       description: 会话上下文仓储 - 持久化聊天对话历史
       operations:
@@ -295,6 +299,7 @@ contexts:
           name: context
         output:
           type: None
+        is_async: true
       - name: find_by_chat_id
         description: "根据会话ID查找上下文\n\nArgs:\n    chat_id: 飞书会话ID\n\nReturns:\n    会话上下文，如果不存在则返回\
           \ None"
@@ -306,6 +311,7 @@ contexts:
         output:
           type: ConversationContext
           optional: true
+        is_async: true
       - name: delete
         description: "删除会话上下文\n\nArgs:\n    chat_id: 飞书会话ID"
         inputs:
@@ -315,6 +321,7 @@ contexts:
           name: chat_id
         output:
           type: None
+        is_async: true
   application:
     use_cases:
     - name: HandleFeishuMessage
@@ -346,6 +353,7 @@ contexts:
           name: cmd
         output:
           type: HandleFeishuMessageResult
+        is_async: true
       - name: _build_system_prompt
         description: 构建包含对话历史的 system prompt
         inputs:
@@ -723,6 +731,7 @@ contexts:
           name: session
         output:
           type: None
+        is_async: true
       - name: delete
         inputs:
         - type: Self
@@ -731,6 +740,7 @@ contexts:
           name: agent_session_id
         output:
           type: None
+        is_async: true
       - name: find_by_id
         inputs:
         - type: Self
@@ -740,6 +750,7 @@ contexts:
         output:
           type: AgentSession
           optional: true
+        is_async: true
       - name: find_by_task_id
         inputs:
         - type: Self
@@ -749,6 +760,7 @@ contexts:
         output:
           type: AgentSession
           optional: true
+        is_async: true
   application:
     use_cases:
     - name: DispatchTask
@@ -769,6 +781,7 @@ contexts:
           name: command
         output:
           type: DispatchTaskResult
+        is_async: true
       - name: _build_system_prompt
         inputs:
         - type: Self
@@ -793,6 +806,7 @@ contexts:
           name: command
         output:
           type: ReviewTaskResult
+        is_async: true
     - name: ReviseTask
       description: Orchestration 应用层用例：任务审核不通过，重新修改
       attributes:
@@ -809,6 +823,7 @@ contexts:
           name: command
         output:
           type: ReviseTaskResult
+        is_async: true
     dtos:
     - name: DispatchTaskResult
       description: 调度任务结果 DTO
@@ -1025,6 +1040,7 @@ contexts:
           name: cwd
         output:
           type: ExecutionReceipt
+        is_async: true
     domain_exceptions:
     - name: ProjectNotFound
       description: 项目未找到异常：当请求的 ProjectId 对应的项目不存在时抛出
@@ -1047,6 +1063,7 @@ contexts:
           name: command
         output:
           type: ExecuteSessionResult
+        is_async: true
     dtos:
     - name: ExecuteSessionQuery
       description: ''

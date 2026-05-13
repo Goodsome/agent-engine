@@ -856,6 +856,11 @@
           "title":"Inputs",
           "type":"array"
         },
+        "is_async":{
+          "default":false,
+          "title":"Is Async",
+          "type":"boolean"
+        },
         "name":{
           "title":"Name",
           "type":"string"

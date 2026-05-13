@@ -1,10 +1,14 @@
 import logging
 from pathlib import Path
 from dataclasses import dataclass
-
 from agent_engine.dispatching.domain.ports.agent_executor_port import AgentExecutorPort
-from agent_engine.dispatching.application.dtos.execute_session_command import ExecuteSessionCommand
-from agent_engine.dispatching.application.dtos.execute_session_result import ExecuteSessionResult
+from agent_engine.dispatching.application.dtos.execute_session_command import (
+    ExecuteSessionCommand,
+)
+from agent_engine.dispatching.application.dtos.execute_session_result import (
+    ExecuteSessionResult,
+)
+from typing import Self
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +19,9 @@ class ExecuteSession:
 
     executor: AgentExecutorPort
 
-    async def execute(self, command: ExecuteSessionCommand) -> ExecuteSessionResult:
-        # 在此处可以增加校验、重试逻辑或超时控制（如果底层适配器未实现）
+    async def execute(
+        self: Self, command: ExecuteSessionCommand
+    ) -> ExecuteSessionResult:
         logger.info(f"Executing session: {command.session_id}")
         if command.project_id:
             cwd = Path("/Users/xxxx/Projects") / command.project_id
@@ -29,10 +34,8 @@ class ExecuteSession:
             model_tier=command.model_tier,
             tools=command.tools,
             context_payload=command.context_payload,
-            cwd=cwd
+            cwd=cwd,
         )
         return ExecuteSessionResult(
-            status=receipt.status,
-            output=receipt.output,
-            fault=receipt.fault,
+            status=receipt.status, output=receipt.output, fault=receipt.fault
         )
