@@ -45,6 +45,34 @@ permissionMode: acceptEdits
    - **表现**：执行 `pytest`，`ruff`, `basedpyright` 出现的警告内容。
    - **对策**：必须修复这个问题。
 
+## 🧪 BDD 测试绑定补充规则 (Bindings Test Rules)
+
+在补充 `bindings_*.py` 测试绑定文件时，你必须严格遵守以下规则：
+
+### 1. 语义文本严格匹配 (Strict Semantic Text Matching)
+- **问题**：在 `match semantic_text` 的 `case` 守卫中使用 `in` 子串匹配（如 `case str(s) if "codegen" in s`）会导致更具体的语义文本被错误拦截。例如 `"不以 codegen 开头"` 也会命中 `"codegen" in s`，造成测试逻辑混乱。
+- **对策**：必须使用**精确匹配**或**包含足够上下文的严格条件**来区分每个 `case`。推荐做法：
+  - 优先使用 `case "exact literal"` 精确匹配。
+  - 若语义文本较长，使用 `case str(s) if s.startswith("...")` 或 `case str(s) if s == "..."` 等明确的全量判断，避免宽泛的子串包含。
+  - 多个 `case` 存在包含关系时，**更具体的条件必须排在前面**（长字符串优先于短前缀）。
+
+### 2. 每个 Case 封装私有方法 (Extract Case to Private Method)
+- **问题**：在 `given`/`when`/`then` 的 `match/case` 分支中直接编写大段数据构造与断言逻辑，会导致方法过长、可读性差，违反代码异味准则中的"大方法"规范。
+- **对策**：每个 `case` 分支的逻辑必须抽取为独立的私有方法（以 `_` 开头），主 `match/case` 仅做路由分发。示例：
+  ```python
+  def given(self, semantic_text: str) -> Self:
+      match semantic_text:
+          case str(s) if s.startswith("内部导入"):
+              self._given_internal_import()
+          case str(s) if s.startswith("外部导入"):
+              self._given_external_import()
+
+  def _given_internal_import(self) -> None:
+      self._node = self._make_import_from("codegen.shared.domain.value_objects.snake_string", ["SnakeString"])
+  ```
+
+---
+
 ## 🛠 基于 TaskGraph 的管理工作流 (TaskGraph Workflow)
 你必须熟练运用 `/task-graph` 技能管理任务生命周期，将 TDD 完美融入其中。
 
