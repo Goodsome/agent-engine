@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Self
 from unittest.mock import AsyncMock, MagicMock
@@ -132,7 +133,7 @@ class ExecuteBindings:
         )
         self._workspace_manager = MagicMock(spec=WorkspaceManager)
         self._workspace_manager.get_workspace.side_effect = ProjectNotFound(
-            "failing-project"
+            "failing-project", root=Path("/tmp")
         )
         self._use_case = ExecuteSession(
             executor=self._executor,

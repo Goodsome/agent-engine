@@ -46,7 +46,7 @@ class ReviewTask:
             system_prompt="",
             user_prompt=user_prompt,
             session_id=str(session.id),
-            project_id=str(session.project_id),
+            project_id=session.project_id.value,
             context_payload={},
         )
 
