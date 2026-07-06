@@ -1,14 +1,15 @@
 import logging
-from pathlib import Path
 from dataclasses import dataclass
-from agent_engine.dispatching.domain.ports.agent_executor_port import AgentExecutorPort
+from pathlib import Path
+from typing import Self
+
 from agent_engine.dispatching.application.dtos.execute_session_command import (
     ExecuteSessionCommand,
 )
 from agent_engine.dispatching.application.dtos.execute_session_result import (
     ExecuteSessionResult,
 )
-from typing import Self
+from agent_engine.dispatching.domain.ports.agent_executor_port import AgentExecutorPort
 from agent_engine.dispatching.domain.services.workspace_manager import WorkspaceManager
 from agent_engine.shared.domain.value_objects.project_id import ProjectId
 
@@ -26,7 +27,10 @@ class ExecuteSession:
         self: Self, command: ExecuteSessionCommand
     ) -> ExecuteSessionResult:
         logger.info(f"Executing session: {command.session_id}")
-        cwd = self._resolve_cwd(command.project_id)
+        cwd = self._resolve_cwd(
+            command.project_id,
+            context=command.context,
+        )
         receipt = await self.executor.execute(
             system_prompt=command.system_prompt,
             user_prompt=command.user_prompt,
@@ -40,7 +44,11 @@ class ExecuteSession:
             status=receipt.status, output=receipt.output, fault=receipt.fault
         )
 
-    def _resolve_cwd(self: Self, project_id: str | None) -> Path | None:
+    def _resolve_cwd(
+        self: Self,
+        project_id: str | None,
+        context: str | None = None,
+    ) -> Path | None:
         """根据 project_id 解析工作目录。
 
         当 project_id 非空时，委托 WorkspaceManager 解析路径；
@@ -49,5 +57,6 @@ class ExecuteSession:
         if not project_id:
             return None
         return self.workspace_manager.get_workspace(
-            ProjectId(value=project_id)
+            ProjectId(value=project_id),
+            context=context,
         )

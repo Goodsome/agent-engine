@@ -18,7 +18,11 @@ class WorkspaceManager:
 
     root_dir: Path
 
-    def get_workspace(self: Self, project_id: ProjectId) -> Path:
+    def get_workspace(
+        self: Self, 
+        project_id: ProjectId,
+        context: str | None = None
+    ) -> Path:
         """根据项目标识解析并返回工作目录路径。
 
         Args:
@@ -32,7 +36,10 @@ class WorkspaceManager:
         """
         workspace = (self.root_dir / project_id.value).resolve()
 
+        if project_id.value == "pangu" and context:
+            workspace = workspace / "contexts" / context
+
         if not workspace.exists():
-            raise ProjectNotFound(project_id.value, root=self.root_dir)
+            raise ProjectNotFound(project_id.value, root=workspace)
 
         return workspace

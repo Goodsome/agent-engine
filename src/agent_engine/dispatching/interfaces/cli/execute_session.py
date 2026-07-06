@@ -26,9 +26,10 @@ def execute_session(
     user_prompt: str = typer.Argument(..., help="The user prompt"),
     project_id: str| None = typer.Option(None, "--project", help="The project ID"),
     system_prompt: str = typer.Option(None, "--system-prompt", "-p", help="The system prompt for the agent"),
-    context_payload: str = typer.Option("{}", "--context", "-c", help="JSON string of context payload"),
     session_id: str = typer.Option(None, "--session-id", "-s", help="The session ID"),
     model_tier: ModelTier = typer.Option(ModelTier.FAST, "--tier", "-t", help="Model tier to use"),
+    context: str = typer.Option(None, "--context", help="The context for the session"),
+    context_payload: str = typer.Option("{}", help="JSON string of context payload"),
 ):
     """Execute an agent session manually."""
     try:
@@ -46,6 +47,7 @@ def execute_session(
         user_prompt=user_prompt,
         context_payload=payload,
         model_tier=model_tier,
+        context=context,
     )
 
     console.print(f"Executing session [bold blue]{effective_session_id}[/bold blue]")
