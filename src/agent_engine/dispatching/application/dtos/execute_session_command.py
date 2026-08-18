@@ -1,3 +1,4 @@
+from typing import Any
 from agent_engine.shared.domain.enums import ModelTier
 from pydantic import BaseModel, Field
 
@@ -11,5 +12,5 @@ class ExecuteSessionCommand(BaseModel):
     project_id: str | None = Field(default=None)
     model_tier: ModelTier | None = Field(default=None)
     tools: list[str] = Field(default_factory=lambda: ["Read", "Edit", "Glob"])
-    context_payload: dict[str, str | None] = Field(default_factory=dict)
+    context_payload: dict[str, Any] = Field(default_factory=dict)
     context: str | None = Field(default=None)
